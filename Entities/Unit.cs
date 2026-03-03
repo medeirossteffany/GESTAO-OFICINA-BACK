@@ -1,7 +1,7 @@
 using System;
 using System.Collections.Generic;
 
-namespace GestaoOficina.Models
+namespace GestaoOficina.Entities
 {
     public class Unit
     {
@@ -18,7 +18,6 @@ namespace GestaoOficina.Models
         public DateTime CreatedAt { get; set; }
 
         public Tenant Tenant { get; set; }
-        public ICollection<User> Users { get; set; }
-        public ICollection<ServiceOrder> ServiceOrders { get; set; }
+        public ICollection<UserUnit> UserUnits { get; set; }
     }
-}
+}}

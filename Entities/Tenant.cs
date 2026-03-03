@@ -1,7 +1,7 @@
 using System;
 using System.Collections.Generic;
 
-namespace GestaoOficina.Models
+namespace GestaoOficina.Entities
 {
     public class Tenant
     {

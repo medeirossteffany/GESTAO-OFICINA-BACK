@@ -1,6 +1,6 @@
 using System;
 
-namespace GestaoOficina.Models
+namespace GestaoOficina.Entities
 {
     public class ServiceOrderTimeline
     {
@@ -20,4 +20,4 @@ namespace GestaoOficina.Models
         public ServiceOrderStatus? OldStatus { get; set; }
         public ServiceOrderStatus? NewStatus { get; set; }
     }
->
+}

@@ -1,15 +1,18 @@
 ﻿using Microsoft.EntityFrameworkCore;
-using GestaoOficina.Models;
+using Microsoft.AspNetCore.Identity;
+using Microsoft.AspNetCore.Identity.EntityFrameworkCore;
+using GestaoOficina.Data.Configurations;
+using GestaoOficina.Entities;
 
 namespace GestaoOficina.Data
 {
-    public class AppDbContext : DbContext
+    public class AppDbContext : IdentityDbContext<User, IdentityRole<int>, int>
     {
         public AppDbContext(DbContextOptions<AppDbContext> options) : base(options) { }
 
         public DbSet<Tenant> Tenants { get; set; }
         public DbSet<Unit> Units { get; set; }
-        public DbSet<User> Users { get; set; }
+        public DbSet<UserUnit> UserUnits { get; set; }
         public DbSet<CustomerLegalType> CustomerLegalTypes { get; set; }
         public DbSet<CustomerCategory> CustomerCategories { get; set; }
         public DbSet<Customer> Customers { get; set; }
@@ -21,7 +24,19 @@ namespace GestaoOficina.Data
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
-            // Aqui você pode configurar as relações, chaves únicas, etc.
+            base.OnModelCreating(modelBuilder);
+            modelBuilder.ApplyConfiguration(new TenantConfiguration());
+            modelBuilder.ApplyConfiguration(new UnitConfiguration());
+            modelBuilder.ApplyConfiguration(new UserConfiguration());
+            modelBuilder.ApplyConfiguration(new UserUnitConfiguration());
+            modelBuilder.ApplyConfiguration(new CustomerLegalTypeConfiguration());
+            modelBuilder.ApplyConfiguration(new CustomerCategoryConfiguration());
+            modelBuilder.ApplyConfiguration(new CustomerConfiguration());
+            modelBuilder.ApplyConfiguration(new VehicleConfiguration());
+            modelBuilder.ApplyConfiguration(new ServiceOrderStatusConfiguration());
+            modelBuilder.ApplyConfiguration(new ServiceOrderConfiguration());
+            modelBuilder.ApplyConfiguration(new ServiceOrderPartConfiguration());
+            modelBuilder.ApplyConfiguration(new ServiceOrderTimelineConfiguration());
         }
     }
 }

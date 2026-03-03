@@ -1,6 +1,6 @@
 using System;
 
-namespace GestaoOficina.Models
+namespace GestaoOficina.Entities
 {
     public class ServiceOrderPart
     {
