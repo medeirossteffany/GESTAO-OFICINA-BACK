@@ -19,12 +19,12 @@ namespace GestaoOficina.Controllers
         }
 
         [HttpPost]
-        public ActionResult<User> CreateUser(CreateUserRequest dto)
+        public async Task<ActionResult<User>> CreateUser(CreateUserRequest dto)
         {
             var loggedTenantId = int.Parse(User.FindFirstValue("TenantId"));
             if (loggedTenantId != dto.TenantId)
                 return Forbid();
-            var user = _service.CreateUser(dto);
+            var user = await _service.CreateUserAsync(dto);
             return CreatedAtAction(nameof(CreateUser), new { id = user.Id }, user);
         }
     }

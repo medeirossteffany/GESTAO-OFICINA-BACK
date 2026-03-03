@@ -8,38 +8,47 @@ namespace GestaoOficina.Features.Users
     public class UserService
     {
         private readonly AppDbContext _context;
-        public UserService(AppDbContext context)
+        private readonly UserManager<User> _userManager;
+        
+        public UserService(AppDbContext context, UserManager<User> userManager)
         {
             _context = context;
+            _userManager = userManager;
         }
 
-        public User CreateUser(CreateUserRequest dto)
+        public async Task<User> CreateUserAsync(CreateUserRequest dto)
         {
-            var passwordHasher = new PasswordHasher<User>();
             var user = new User
             {
                 TenantId = dto.TenantId,
+                UserName = dto.Email,
                 Name = dto.Name,
                 Email = dto.Email,
+                PhoneNumber = dto.PhoneNumber,
                 Role = Enum.TryParse<UserRole>(dto.Role, true, out var role) ? role : UserRole.Comum,
                 IsActive = true,
                 FullAccess = false,
                 CreatedAt = DateTime.UtcNow
             };
-            user.PasswordHash = passwordHasher.HashPassword(user, dto.Password);
-            _context.Users.Add(user);
-            _context.SaveChanges();
-
-            // Se UnitId foi fornecido no DTO, vincular à unit
-            if (dto.UnitId.HasValue)
+            
+            var result = await _userManager.CreateAsync(user, dto.Password);
+            if (!result.Succeeded)
             {
-                var userUnit = new UserUnit
+                throw new Exception($"Erro ao criar usuário: {string.Join(", ", result.Errors.Select(e => e.Description))}");
+            }
+
+            if (dto.UnitIds != null && dto.UnitIds.Count > 0)
+            {
+                foreach (var unitId in dto.UnitIds)
                 {
-                    UserId = user.Id,
-                    UnitId = dto.UnitId.Value
-                };
-                _context.UserUnits.Add(userUnit);
-                _context.SaveChanges();
+                    var userUnit = new UserUnit
+                    {
+                        UserId = user.Id,
+                        UnitId = unitId
+                    };
+                    _context.UserUnits.Add(userUnit);
+                }
+                await _context.SaveChangesAsync();
             }
 
             return user;

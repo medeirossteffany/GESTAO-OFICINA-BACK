@@ -60,6 +60,7 @@ namespace GestaoOficina.Features.Onboarding
                 UserName = dto.AdminEmail,
                 Name = dto.AdminName,
                 Email = dto.AdminEmail,
+                PhoneNumber = dto.AdminPhoneNumber,
                 Role = UserRole.Admin,
                 IsActive = true,
                 FullAccess = true,

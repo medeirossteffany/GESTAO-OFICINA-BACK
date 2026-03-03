@@ -9,6 +9,9 @@ using GestaoOficina.Features.Onboarding;
 using GestaoOficina.Features.Tenants;
 using GestaoOficina.Features.Users;
 using GestaoOficina.Features.Units;
+using DotNetEnv;
+
+Env.Load();
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -17,11 +20,16 @@ builder.Services.AddControllers();
 builder.Services.AddOpenApi();
 
 // DbContext
+var connectionString =
+    $"server={Environment.GetEnvironmentVariable("DB_SERVER") ?? "127.0.0.1"};" +
+    $"port={Environment.GetEnvironmentVariable("DB_PORT") ?? "3306"};" +
+    $"database={Environment.GetEnvironmentVariable("DB_DATABASE") ?? "GestaoOficina"};" +
+    $"user={Environment.GetEnvironmentVariable("DB_USER") ?? "root"};" +
+    $"password={Environment.GetEnvironmentVariable("DB_PASSWORD") ?? ""};" +
+    "allowpublickeyretrieval=true;sslmode=none";
+
 builder.Services.AddDbContext<AppDbContext>(options =>
-    options.UseMySql(
-        builder.Configuration.GetConnectionString("DefaultConnection"),
-        ServerVersion.AutoDetect(builder.Configuration.GetConnectionString("DefaultConnection"))
-    )
+    options.UseMySql(connectionString, ServerVersion.AutoDetect(connectionString))
 );
 
 // Identity + EF Core
@@ -36,8 +44,8 @@ builder.Services.AddIdentity<User, IdentityRole<int>>(options =>
 .AddEntityFrameworkStores<AppDbContext>();
 
 // JWT Authentication
-var jwtKey = builder.Configuration["Jwt:Key"] ?? "sua-chave-secreta-bem-grande";
-var jwtIssuer = builder.Configuration["Jwt:Issuer"] ?? "GestaoOficina";
+var jwtKey = Environment.GetEnvironmentVariable("JWT_KEY") ?? "sua-chave-secreta-bem-grande";
+var jwtIssuer = Environment.GetEnvironmentVariable("JWT_ISSUER") ?? "GestaoOficina";
 builder.Services.AddAuthentication(options =>
 {
     options.DefaultAuthenticateScheme = JwtBearerDefaults.AuthenticationScheme;

@@ -9,6 +9,7 @@ namespace GestaoOficina.DTOs.Onboarding
         public List<CreateUnitDto>? Units { get; set; }
         public string AdminName { get; set; }
         public string AdminEmail { get; set; }
+        public string? AdminPhoneNumber { get; set; }
         public string AdminPassword { get; set; }
     }
 }
