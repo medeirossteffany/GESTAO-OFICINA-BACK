@@ -8,14 +8,17 @@ namespace GestaoOficina.Features.Onboarding
     public class OnboardingService
     {
         private readonly AppDbContext _context;
-        public OnboardingService(AppDbContext context)
+        private readonly UserManager<User> _userManager;
+        
+        public OnboardingService(AppDbContext context, UserManager<User> userManager)
         {
             _context = context;
+            _userManager = userManager;
         }
 
-        public (Tenant tenant, List<Unit> units, User user) Onboard(OnboardingRequest dto)
+        public async Task<(Tenant tenant, List<Unit> units, User user)> OnboardAsync(OnboardingRequest dto)
         {
-            using var transaction = _context.Database.BeginTransaction();
+            using var transaction = await _context.Database.BeginTransactionAsync();
 
             var tenant = new Tenant
             {
@@ -24,11 +27,10 @@ namespace GestaoOficina.Features.Onboarding
                 CreatedAt = DateTime.UtcNow
             };
             _context.Tenants.Add(tenant);
-            _context.SaveChanges();
+            await _context.SaveChangesAsync();
 
             var units = new List<Unit>();
             
-            // Criar units apenas se fornecidas
             if (dto.Units != null && dto.Units.Count > 0)
             {
                 foreach (var unitDto in dto.Units)
@@ -49,13 +51,13 @@ namespace GestaoOficina.Features.Onboarding
                     _context.Units.Add(unit);
                     units.Add(unit);
                 }
-                _context.SaveChanges();
+                await _context.SaveChangesAsync();
             }
 
-            var passwordHasher = new PasswordHasher<User>();
             var user = new User
             {
                 TenantId = tenant.Id,
+                UserName = dto.AdminEmail,
                 Name = dto.AdminName,
                 Email = dto.AdminEmail,
                 Role = UserRole.Admin,
@@ -63,11 +65,14 @@ namespace GestaoOficina.Features.Onboarding
                 FullAccess = true,
                 CreatedAt = DateTime.UtcNow
             };
-            user.PasswordHash = passwordHasher.HashPassword(user, dto.AdminPassword);
-            _context.Users.Add(user);
-            _context.SaveChanges();
+            
+            var result = await _userManager.CreateAsync(user, dto.AdminPassword);
+            if (!result.Succeeded)
+            {
+                await transaction.RollbackAsync();
+                throw new Exception($"Erro ao criar usuário: {string.Join(", ", result.Errors.Select(e => e.Description))}");
+            }
 
-            // Vincular admin a todas as units (se houver)
             foreach (var unit in units)
             {
                 var userUnit = new UserUnit
@@ -77,7 +82,9 @@ namespace GestaoOficina.Features.Onboarding
                 };
                 _context.UserUnits.Add(userUnit);
             }
-            _context.SaveChanges();
+            await _context.SaveChangesAsync();
+
+            await transaction.CommitAsync();
 
             return (tenant, units, user);
         }

@@ -15,9 +15,9 @@ namespace GestaoOficina.Controllers
         }
 
         [HttpPost]
-        public IActionResult Onboard(OnboardingRequest dto)
+        public async Task<IActionResult> Onboard(OnboardingRequest dto)
         {
-            var (tenant, units, user) = _service.Onboard(dto);
+            var (tenant, units, user) = await _service.OnboardAsync(dto);
             return Ok(new 
             { 
                 TenantId = tenant.Id, 

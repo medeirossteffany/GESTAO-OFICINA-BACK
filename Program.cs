@@ -4,12 +4,25 @@ using System.Text;
 using GestaoOficina.Data;
 using GestaoOficina.Entities;
 using Microsoft.AspNetCore.Identity;
+using Microsoft.EntityFrameworkCore;
+using GestaoOficina.Features.Onboarding;
+using GestaoOficina.Features.Tenants;
+using GestaoOficina.Features.Users;
+using GestaoOficina.Features.Units;
 
 var builder = WebApplication.CreateBuilder(args);
 
 // Add services to the container.
 builder.Services.AddControllers();
 builder.Services.AddOpenApi();
+
+// DbContext
+builder.Services.AddDbContext<AppDbContext>(options =>
+    options.UseMySql(
+        builder.Configuration.GetConnectionString("DefaultConnection"),
+        ServerVersion.AutoDetect(builder.Configuration.GetConnectionString("DefaultConnection"))
+    )
+);
 
 // Identity + EF Core
 builder.Services.AddIdentity<User, IdentityRole<int>>(options =>
@@ -44,6 +57,12 @@ builder.Services.AddAuthentication(options =>
 });
 
 builder.Services.AddAuthorization();
+
+// Application Services
+builder.Services.AddScoped<OnboardingService>();
+builder.Services.AddScoped<TenantService>();
+builder.Services.AddScoped<UserService>();
+builder.Services.AddScoped<UnitService>();
 
 var app = builder.Build();
 
