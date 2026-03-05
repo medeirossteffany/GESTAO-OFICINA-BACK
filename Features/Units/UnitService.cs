@@ -13,13 +13,12 @@ namespace GestaoOficina.Features.Units
             _context = context;
         }
 
-        public async Task<Unit> CreateUnit(CreateUnitRequest dto)
+        public async Task<Unit> CreateUnit(CreateUnitRequest dto, int tenantId)
         {
-            // Validar se CNPJ já existe em outro Tenant
             if (!string.IsNullOrWhiteSpace(dto.Cnpj))
             {
                 var unitInOtherTenant = await _context.Units
-                    .FirstOrDefaultAsync(u => u.TenantId != dto.TenantId && u.Cnpj == dto.Cnpj);
+                    .FirstOrDefaultAsync(u => u.TenantId != tenantId && u.Cnpj == dto.Cnpj);
                 
                 if (unitInOtherTenant != null)
                 {
@@ -29,7 +28,7 @@ namespace GestaoOficina.Features.Units
 
             var unit = new Unit
             {
-                TenantId = dto.TenantId,
+                TenantId = tenantId,
                 Name = dto.Name,
                 Cnpj = dto.Cnpj,
                 AddressZip = dto.AddressZip,
@@ -62,7 +61,6 @@ namespace GestaoOficina.Features.Units
             var unit = await _context.Units.FindAsync(id);
             if (unit == null) return null;
 
-            // Validar se CNPJ mudou e já existe em outro Tenant
             if (!string.IsNullOrWhiteSpace(dto.Cnpj) && unit.Cnpj != dto.Cnpj)
             {
                 var unitInOtherTenant = await _context.Units

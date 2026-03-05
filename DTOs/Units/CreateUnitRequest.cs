@@ -2,7 +2,6 @@ namespace GestaoOficina.DTOs.Units
 {
     public class CreateUnitRequest
     {
-        public int TenantId { get; set; }
         public string Name { get; set; }
         public string? Cnpj { get; set; }
         public string AddressZip { get; set; }

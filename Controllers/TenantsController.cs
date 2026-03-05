@@ -39,12 +39,11 @@ namespace GestaoOficina.Controllers
         [Authorize(Roles = "Admin")]
         public async Task<ActionResult<Tenant>> UpdateTenant(int id, UpdateTenantRequest dto)
         {
-            // Validar se o usuário logado pertence ao Tenant
+           
             var loggedTenantId = int.Parse(User.FindFirstValue("TenantId"));
             if (loggedTenantId != id)
                 return Forbid();
 
-            // Validar se o usuário tem FullAccess
             var fullAccess = bool.Parse(User.FindFirstValue("FullAccess") ?? "false");
             if (!fullAccess)
                 return Forbid();

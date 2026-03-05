@@ -21,7 +21,7 @@ namespace GestaoOficina.Features.Onboarding
         {
             using var transaction = await _context.Database.BeginTransactionAsync();
 
-            // Validar se TenantCnpj já existe
+
             if (!string.IsNullOrWhiteSpace(dto.TenantCnpj))
             {
                 var existingTenant = await _context.Tenants
@@ -34,7 +34,6 @@ namespace GestaoOficina.Features.Onboarding
                 }
             }
 
-            // Validar se Email já existe GLOBALMENTE
             if (!string.IsNullOrWhiteSpace(dto.AdminEmail))
             {
                 var existingUserByEmail = await _context.Users
@@ -47,7 +46,6 @@ namespace GestaoOficina.Features.Onboarding
                 }
             }
 
-            // Validar se PhoneNumber já existe GLOBALMENTE
             if (!string.IsNullOrWhiteSpace(dto.AdminPhoneNumber))
             {
                 var existingUserByPhone = await _context.Users
@@ -75,7 +73,7 @@ namespace GestaoOficina.Features.Onboarding
             {
                 foreach (var unitDto in dto.Units)
                 {
-                    // Validar se CNPJ da Unit já existe em outro Tenant
+            
                     if (!string.IsNullOrWhiteSpace(unitDto.Cnpj))
                     {
                         var unitInOtherTenant = await _context.Units

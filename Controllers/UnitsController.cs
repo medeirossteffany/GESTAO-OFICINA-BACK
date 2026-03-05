@@ -72,10 +72,9 @@ namespace GestaoOficina.Controllers
             var loggedTenantId = int.Parse(User.FindFirstValue("TenantId"));
             var fullAccess = bool.Parse(User.FindFirstValue("FullAccess") ?? "false");
 
-            if (loggedTenantId != dto.TenantId) return Forbid();
             if (!fullAccess) return Forbid();
 
-            var unit = await _service.CreateUnit(dto);
+            var unit = await _service.CreateUnit(dto, loggedTenantId);
             var response = new UnitResponse
             {
                 Id = unit.Id,

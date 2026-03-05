@@ -15,7 +15,7 @@ namespace GestaoOficina.Features.Tenants
 
         public async Task<Tenant> CreateTenant(CreateTenantRequest dto)
         {
-            // Validar se CNPJ já existe
+           
             if (!string.IsNullOrWhiteSpace(dto.Cnpj))
             {
                 var existingTenant = await _context.Tenants
@@ -48,7 +48,6 @@ namespace GestaoOficina.Features.Tenants
             var tenant = await _context.Tenants.FindAsync(id);
             if (tenant == null) return null;
 
-            // Validar se CNPJ mudou e já existe em outro Tenant
             if (!string.IsNullOrWhiteSpace(dto.Cnpj) && tenant.Cnpj != dto.Cnpj)
             {
                 var existingTenant = await _context.Tenants

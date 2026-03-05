@@ -37,7 +37,6 @@ namespace GestaoOficina.Controllers
             var result = await _signInManager.CheckPasswordSignInAsync(user, dto.Password, false);
             if (!result.Succeeded) return Unauthorized();
 
-            // Carregar as units do usuário
             var userUnits = await _context.UserUnits
                 .Where(uu => uu.UserId == user.Id)
                 .Select(uu => uu.UnitId.ToString())
@@ -53,7 +52,6 @@ namespace GestaoOficina.Controllers
                 new Claim("FullAccess", user.FullAccess.ToString())
             };
 
-            // Adicionar units ao token
             foreach (var unitId in userUnits)
             {
                 claims.Add(new Claim("UnitId", unitId));

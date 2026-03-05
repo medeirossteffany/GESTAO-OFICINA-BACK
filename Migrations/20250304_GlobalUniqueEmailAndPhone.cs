@@ -10,12 +10,11 @@ namespace GestaoOficina.Migrations
         /// <inheritdoc />
         protected override void Up(MigrationBuilder migrationBuilder)
         {
-            // Remove o índice antigo (TenantId, Email)
+            
             migrationBuilder.DropIndex(
                 name: "IX_AspNetUsers_TenantId_Email",
                 table: "AspNetUsers");
 
-            // Adiciona índice único para Email globalmente
             migrationBuilder.CreateIndex(
                 name: "IX_AspNetUsers_Email",
                 table: "AspNetUsers",
@@ -23,7 +22,6 @@ namespace GestaoOficina.Migrations
                 unique: true,
                 filter: "[Email] IS NOT NULL");
 
-            // Adiciona índice único para PhoneNumber globalmente
             migrationBuilder.CreateIndex(
                 name: "IX_AspNetUsers_PhoneNumber",
                 table: "AspNetUsers",
@@ -35,7 +33,7 @@ namespace GestaoOficina.Migrations
         /// <inheritdoc />
         protected override void Down(MigrationBuilder migrationBuilder)
         {
-            // Remove os índices novos
+
             migrationBuilder.DropIndex(
                 name: "IX_AspNetUsers_Email",
                 table: "AspNetUsers");
