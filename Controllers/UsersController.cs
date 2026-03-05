@@ -27,5 +27,37 @@ namespace GestaoOficina.Controllers
             var user = await _service.CreateUserAsync(dto);
             return CreatedAtAction(nameof(CreateUser), new { id = user.Id }, user);
         }
+
+        [HttpGet("me")]
+        [AllowAnonymous]
+        [Authorize]
+        public async Task<ActionResult<User>> GetMyProfile()
+        {
+            var userIdStr = User.FindFirstValue(ClaimTypes.NameIdentifier);
+            if (!int.TryParse(userIdStr, out var userId))
+                return Unauthorized();
+
+            var user = await _service.GetUserByIdAsync(userId);
+            if (user == null)
+                return NotFound();
+
+            return Ok(user);
+        }
+
+        [HttpPut("me")]
+        [AllowAnonymous]
+        [Authorize]
+        public async Task<ActionResult<User>> UpdateMyProfile(UpdateUserProfileRequest dto)
+        {
+            var userIdStr = User.FindFirstValue(ClaimTypes.NameIdentifier);
+            if (!int.TryParse(userIdStr, out var userId))
+                return Unauthorized();
+
+            var user = await _service.UpdateUserProfileAsync(userId, dto);
+            if (user == null)
+                return NotFound();
+
+            return Ok(user);
+        }
     }
 }

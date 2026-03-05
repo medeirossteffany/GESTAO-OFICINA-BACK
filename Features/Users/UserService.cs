@@ -18,8 +18,7 @@ namespace GestaoOficina.Features.Users
         }
 
         public async Task<User> CreateUserAsync(CreateUserRequest dto)
-        {
-            // Validar se Email já existe GLOBALMENTE
+        {  
             var existingUserByEmail = await _context.Users
                 .FirstOrDefaultAsync(u => u.Email == dto.Email);
             
@@ -28,7 +27,6 @@ namespace GestaoOficina.Features.Users
                 throw new InvalidOperationException($"O email {dto.Email} já está registrado no sistema.");
             }
 
-            // Validar se PhoneNumber já existe GLOBALMENTE (se fornecido)
             if (!string.IsNullOrWhiteSpace(dto.PhoneNumber))
             {
                 var existingUserByPhone = await _context.Users
@@ -73,6 +71,36 @@ namespace GestaoOficina.Features.Users
                 await _context.SaveChangesAsync();
             }
 
+            return user;
+        }
+
+        public async Task<User?> GetUserByIdAsync(int id)
+        {
+            return await _context.Users.FindAsync(id);
+        }
+
+        public async Task<User?> UpdateUserProfileAsync(int userId, UpdateUserProfileRequest dto)
+        {
+            var user = await _context.Users.FindAsync(userId);
+            if (user == null) return null;
+
+            // Validar se PhoneNumber mudou e já existe em outro usuário
+            if (!string.IsNullOrWhiteSpace(dto.PhoneNumber) && user.PhoneNumber != dto.PhoneNumber)
+            {
+                var existingUserByPhone = await _context.Users
+                    .FirstOrDefaultAsync(u => u.Id != userId && u.PhoneNumber == dto.PhoneNumber);
+                
+                if (existingUserByPhone != null)
+                {
+                    throw new InvalidOperationException($"O telefone {dto.PhoneNumber} já está registrado no sistema.");
+                }
+            }
+
+            user.Name = dto.Name;
+            user.PhoneNumber = dto.PhoneNumber;
+
+            _context.Users.Update(user);
+            await _context.SaveChangesAsync();
             return user;
         }
     }
