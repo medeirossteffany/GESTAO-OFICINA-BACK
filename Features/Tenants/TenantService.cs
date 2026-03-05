@@ -37,5 +37,35 @@ namespace GestaoOficina.Features.Tenants
             await _context.SaveChangesAsync();
             return tenant;
         }
+
+        public async Task<Tenant?> GetTenant(int id)
+        {
+            return await _context.Tenants.FindAsync(id);
+        }
+
+        public async Task<Tenant?> UpdateTenant(int id, UpdateTenantRequest dto)
+        {
+            var tenant = await _context.Tenants.FindAsync(id);
+            if (tenant == null) return null;
+
+            // Validar se CNPJ mudou e já existe em outro Tenant
+            if (!string.IsNullOrWhiteSpace(dto.Cnpj) && tenant.Cnpj != dto.Cnpj)
+            {
+                var existingTenant = await _context.Tenants
+                    .FirstOrDefaultAsync(t => t.Id != id && t.Cnpj == dto.Cnpj);
+                
+                if (existingTenant != null)
+                {
+                    throw new InvalidOperationException($"Já existe um Tenant com o CNPJ {dto.Cnpj}.");
+                }
+            }
+
+            tenant.Name = dto.Name;
+            tenant.Cnpj = dto.Cnpj;
+
+            _context.Tenants.Update(tenant);
+            await _context.SaveChangesAsync();
+            return tenant;
+        }
     }
 }
