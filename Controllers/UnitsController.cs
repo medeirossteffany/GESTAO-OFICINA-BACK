@@ -70,7 +70,10 @@ namespace GestaoOficina.Controllers
         public async Task<ActionResult<UnitResponse>> CreateUnit(CreateUnitRequest dto)
         {
             var loggedTenantId = int.Parse(User.FindFirstValue("TenantId"));
+            var fullAccess = bool.Parse(User.FindFirstValue("FullAccess") ?? "false");
+
             if (loggedTenantId != dto.TenantId) return Forbid();
+            if (!fullAccess) return Forbid();
 
             var unit = await _service.CreateUnit(dto);
             var response = new UnitResponse
@@ -95,9 +98,12 @@ namespace GestaoOficina.Controllers
         public async Task<ActionResult<UnitResponse>> UpdateUnit(int id, UpdateUnitRequest dto)
         {
             var loggedTenantId = int.Parse(User.FindFirstValue("TenantId"));
+            var fullAccess = bool.Parse(User.FindFirstValue("FullAccess") ?? "false");
+
             var unit = await _service.GetUnitById(id);
             if (unit == null) return NotFound();
             if (unit.TenantId != loggedTenantId) return Forbid();
+            if (!fullAccess) return Forbid();
 
             var updatedUnit = await _service.UpdateUnit(id, dto);
             var response = new UnitResponse
@@ -122,9 +128,12 @@ namespace GestaoOficina.Controllers
         public async Task<IActionResult> DeleteUnit(int id)
         {
             var loggedTenantId = int.Parse(User.FindFirstValue("TenantId"));
+            var fullAccess = bool.Parse(User.FindFirstValue("FullAccess") ?? "false");
+
             var unit = await _service.GetUnitById(id);
             if (unit == null) return NotFound();
             if (unit.TenantId != loggedTenantId) return Forbid();
+            if (!fullAccess) return Forbid();
 
             var success = await _service.DeleteUnit(id);
             if (!success) return BadRequest();
