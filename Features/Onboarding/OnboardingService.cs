@@ -2,6 +2,7 @@ using GestaoOficina.Entities;
 using GestaoOficina.DTOs.Onboarding;
 using GestaoOficina.Data;
 using Microsoft.AspNetCore.Identity;
+using Microsoft.EntityFrameworkCore;
 
 namespace GestaoOficina.Features.Onboarding
 {
@@ -20,6 +21,45 @@ namespace GestaoOficina.Features.Onboarding
         {
             using var transaction = await _context.Database.BeginTransactionAsync();
 
+            // Validar se TenantCnpj já existe
+            if (!string.IsNullOrWhiteSpace(dto.TenantCnpj))
+            {
+                var existingTenant = await _context.Tenants
+                    .FirstOrDefaultAsync(t => t.Cnpj == dto.TenantCnpj);
+                
+                if (existingTenant != null)
+                {
+                    await transaction.RollbackAsync();
+                    throw new InvalidOperationException($"Já existe um Tenant com o CNPJ {dto.TenantCnpj}.");
+                }
+            }
+
+            // Validar se Email já existe GLOBALMENTE
+            if (!string.IsNullOrWhiteSpace(dto.AdminEmail))
+            {
+                var existingUserByEmail = await _context.Users
+                    .FirstOrDefaultAsync(u => u.Email == dto.AdminEmail);
+                
+                if (existingUserByEmail != null)
+                {
+                    await transaction.RollbackAsync();
+                    throw new InvalidOperationException($"O email {dto.AdminEmail} já está registrado no sistema.");
+                }
+            }
+
+            // Validar se PhoneNumber já existe GLOBALMENTE
+            if (!string.IsNullOrWhiteSpace(dto.AdminPhoneNumber))
+            {
+                var existingUserByPhone = await _context.Users
+                    .FirstOrDefaultAsync(u => u.PhoneNumber == dto.AdminPhoneNumber);
+                
+                if (existingUserByPhone != null)
+                {
+                    await transaction.RollbackAsync();
+                    throw new InvalidOperationException($"O telefone {dto.AdminPhoneNumber} já está registrado no sistema.");
+                }
+            }
+
             var tenant = new Tenant
             {
                 Name = dto.TenantName,
@@ -35,6 +75,19 @@ namespace GestaoOficina.Features.Onboarding
             {
                 foreach (var unitDto in dto.Units)
                 {
+                    // Validar se CNPJ da Unit já existe em outro Tenant
+                    if (!string.IsNullOrWhiteSpace(unitDto.Cnpj))
+                    {
+                        var unitInOtherTenant = await _context.Units
+                            .FirstOrDefaultAsync(u => u.TenantId != tenant.Id && u.Cnpj == unitDto.Cnpj);
+                        
+                        if (unitInOtherTenant != null)
+                        {
+                            await transaction.RollbackAsync();
+                            throw new InvalidOperationException($"O CNPJ {unitDto.Cnpj} já está sendo utilizado por outra Unit de outro Tenant.");
+                        }
+                    }
+
                     var unit = new Unit
                     {
                         TenantId = tenant.Id,

@@ -313,6 +313,7 @@ namespace GestaoOficina.Migrations
                     CreatedAt = table.Column<DateTime>(type: "datetime(6)", nullable: false)
                 },
                 constraints: table =>
+
                 {
                     table.PrimaryKey("PK_Vehicles", x => x.Id);
                     table.ForeignKey(
@@ -538,12 +539,6 @@ namespace GestaoOficina.Migrations
                     Quantity = table.Column<decimal>(type: "decimal(65,30)", nullable: false),
                     UnitPrice = table.Column<decimal>(type: "decimal(65,30)", nullable: false),
                     TotalPrice = table.Column<decimal>(type: "decimal(65,30)", nullable: false),
-                    Sku = table.Column<string>(type: "longtext", nullable: true)
-                        .Annotation("MySql:CharSet", "utf8mb4"),
-                    Manufacturer = table.Column<string>(type: "longtext", nullable: true)
-                        .Annotation("MySql:CharSet", "utf8mb4"),
-                    PartNumber = table.Column<string>(type: "longtext", nullable: true)
-                        .Annotation("MySql:CharSet", "utf8mb4"),
                     CreatedAt = table.Column<DateTime>(type: "datetime(6)", nullable: false)
                 },
                 constraints: table =>

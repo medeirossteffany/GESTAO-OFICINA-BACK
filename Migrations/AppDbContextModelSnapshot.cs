@@ -250,20 +250,11 @@ namespace GestaoOficina.Migrations
                         .IsRequired()
                         .HasColumnType("longtext");
 
-                    b.Property<string>("Manufacturer")
-                        .HasColumnType("longtext");
-
-                    b.Property<string>("PartNumber")
-                        .HasColumnType("longtext");
-
                     b.Property<decimal>("Quantity")
                         .HasColumnType("decimal(65,30)");
 
                     b.Property<int>("ServiceOrderId")
                         .HasColumnType("int");
-
-                    b.Property<string>("Sku")
-                        .HasColumnType("longtext");
 
                     b.Property<int>("TenantId")
                         .HasColumnType("int");

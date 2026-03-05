@@ -2,6 +2,7 @@ using GestaoOficina.Entities;
 using GestaoOficina.DTOs.Users;
 using GestaoOficina.Data;
 using Microsoft.AspNetCore.Identity;
+using Microsoft.EntityFrameworkCore;
 
 namespace GestaoOficina.Features.Users
 {
@@ -18,6 +19,27 @@ namespace GestaoOficina.Features.Users
 
         public async Task<User> CreateUserAsync(CreateUserRequest dto)
         {
+            // Validar se Email já existe GLOBALMENTE
+            var existingUserByEmail = await _context.Users
+                .FirstOrDefaultAsync(u => u.Email == dto.Email);
+            
+            if (existingUserByEmail != null)
+            {
+                throw new InvalidOperationException($"O email {dto.Email} já está registrado no sistema.");
+            }
+
+            // Validar se PhoneNumber já existe GLOBALMENTE (se fornecido)
+            if (!string.IsNullOrWhiteSpace(dto.PhoneNumber))
+            {
+                var existingUserByPhone = await _context.Users
+                    .FirstOrDefaultAsync(u => u.PhoneNumber == dto.PhoneNumber);
+                
+                if (existingUserByPhone != null)
+                {
+                    throw new InvalidOperationException($"O telefone {dto.PhoneNumber} já está registrado no sistema.");
+                }
+            }
+
             var user = new User
             {
                 TenantId = dto.TenantId,

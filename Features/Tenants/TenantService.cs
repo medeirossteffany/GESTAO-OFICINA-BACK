@@ -1,6 +1,7 @@
 using GestaoOficina.Entities;
 using GestaoOficina.DTOs.Tenants;
 using GestaoOficina.Data;
+using Microsoft.EntityFrameworkCore;
 
 namespace GestaoOficina.Features.Tenants
 {
@@ -12,8 +13,20 @@ namespace GestaoOficina.Features.Tenants
             _context = context;
         }
 
-        public Tenant CreateTenant(CreateTenantRequest dto)
+        public async Task<Tenant> CreateTenant(CreateTenantRequest dto)
         {
+            // Validar se CNPJ já existe
+            if (!string.IsNullOrWhiteSpace(dto.Cnpj))
+            {
+                var existingTenant = await _context.Tenants
+                    .FirstOrDefaultAsync(t => t.Cnpj == dto.Cnpj);
+                
+                if (existingTenant != null)
+                {
+                    throw new InvalidOperationException($"Já existe um Tenant com o CNPJ {dto.Cnpj}.");
+                }
+            }
+
             var tenant = new Tenant
             {
                 Name = dto.Name,
@@ -21,7 +34,7 @@ namespace GestaoOficina.Features.Tenants
                 CreatedAt = DateTime.UtcNow
             };
             _context.Tenants.Add(tenant);
-            _context.SaveChanges();
+            await _context.SaveChangesAsync();
             return tenant;
         }
     }

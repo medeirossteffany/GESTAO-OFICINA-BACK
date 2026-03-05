@@ -15,6 +15,18 @@ namespace GestaoOficina.Features.Units
 
         public async Task<Unit> CreateUnit(CreateUnitRequest dto)
         {
+            // Validar se CNPJ já existe em outro Tenant
+            if (!string.IsNullOrWhiteSpace(dto.Cnpj))
+            {
+                var unitInOtherTenant = await _context.Units
+                    .FirstOrDefaultAsync(u => u.TenantId != dto.TenantId && u.Cnpj == dto.Cnpj);
+                
+                if (unitInOtherTenant != null)
+                {
+                    throw new InvalidOperationException($"O CNPJ {dto.Cnpj} já está sendo utilizado por outra Unit de outro Tenant.");
+                }
+            }
+
             var unit = new Unit
             {
                 TenantId = dto.TenantId,
@@ -49,6 +61,18 @@ namespace GestaoOficina.Features.Units
         {
             var unit = await _context.Units.FindAsync(id);
             if (unit == null) return null;
+
+            // Validar se CNPJ mudou e já existe em outro Tenant
+            if (!string.IsNullOrWhiteSpace(dto.Cnpj) && unit.Cnpj != dto.Cnpj)
+            {
+                var unitInOtherTenant = await _context.Units
+                    .FirstOrDefaultAsync(u => u.TenantId != unit.TenantId && u.Cnpj == dto.Cnpj);
+                
+                if (unitInOtherTenant != null)
+                {
+                    throw new InvalidOperationException($"O CNPJ {dto.Cnpj} já está sendo utilizado por outra Unit de outro Tenant.");
+                }
+            }
 
             unit.Name = dto.Name;
             unit.Cnpj = dto.Cnpj;

@@ -15,7 +15,13 @@ namespace GestaoOficina.Data.Configurations
             builder.Property(u => u.IsActive).IsRequired();
             builder.Property(u => u.FullAccess).IsRequired().HasDefaultValue(false);
             builder.Property(u => u.CreatedAt).IsRequired();
-            builder.HasIndex(u => new { u.TenantId, u.Email }).IsUnique();
+            
+            // Email único globalmente (em todos os tenants)
+            builder.HasIndex(u => u.Email).IsUnique().HasFilter("[Email] IS NOT NULL");
+            
+            // PhoneNumber único globalmente (em todos os tenants)
+            builder.HasIndex(u => u.PhoneNumber).IsUnique().HasFilter("[PhoneNumber] IS NOT NULL");
+            
             builder.HasOne(u => u.Tenant)
                 .WithMany(t => t.Users)
                 .HasForeignKey(u => u.TenantId);

@@ -11,6 +11,7 @@ namespace GestaoOficina.Data.Configurations
             builder.HasKey(t => t.Id);
             builder.Property(t => t.Name).IsRequired();
             builder.Property(t => t.CreatedAt).IsRequired();
+            builder.HasIndex(t => t.Cnpj).IsUnique().HasFilter("[Cnpj] IS NOT NULL");
         }
     }
 }
