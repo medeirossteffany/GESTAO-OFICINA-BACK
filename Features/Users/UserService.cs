@@ -59,7 +59,6 @@ namespace GestaoOficina.Features.Users
                 throw new Exception($"Erro ao criar usuário: {string.Join(", ", result.Errors.Select(e => e.Description))}");
             }
 
-            // Se for Admin, atribui todas as units do tenant
             if (parsedRole == UserRole.Admin)
             {
                 var tenantUnits = await _context.Units
@@ -76,7 +75,6 @@ namespace GestaoOficina.Features.Users
                     _context.UserUnits.Add(userUnit);
                 }
             }
-            // Se for Comum, atribui apenas as units especificadas
             else if (dto.UnitIds != null && dto.UnitIds.Count > 0)
             {
                 foreach (var unitId in dto.UnitIds)
@@ -130,7 +128,6 @@ namespace GestaoOficina.Features.Users
             await _context.SaveChangesAsync();
             return user;
         }
-
         public async Task<User?> UpdateUserAsync(int userId, UpdateUserRequest dto)
         {
             var user = await _context.Users
@@ -174,7 +171,6 @@ namespace GestaoOficina.Features.Users
             var existingUnits = user.UserUnits.ToList();
             _context.UserUnits.RemoveRange(existingUnits);
 
-            // Se for Admin, atribui todas as units do tenant
             if (parsedRole == UserRole.Admin)
             {
                 var tenantUnits = await _context.Units
@@ -191,7 +187,6 @@ namespace GestaoOficina.Features.Users
                     _context.UserUnits.Add(userUnit);
                 }
             }
-            // Se for Comum, atribui apenas as units especificadas
             else if (dto.UnitIds != null && dto.UnitIds.Count > 0)
             {
                 foreach (var unitId in dto.UnitIds)
@@ -209,7 +204,6 @@ namespace GestaoOficina.Features.Users
             await _context.SaveChangesAsync();
             return user;
         }
-
         public async Task<bool> DeleteUserAsync(int userId)
         {
             var user = await _context.Users.FindAsync(userId);

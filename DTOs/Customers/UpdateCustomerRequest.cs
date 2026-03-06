@@ -1,12 +1,7 @@
-using System;
-using System.Collections.Generic;
-
-namespace GestaoOficina.Entities
+namespace GestaoOficina.DTOs.Customers
 {
-    public class Customer
+    public class UpdateCustomerRequest
     {
-        public int Id { get; set; }
-        public int TenantId { get; set; }
         public int LegalTypeId { get; set; }
         public string Name { get; set; }
         public string? CpfCnpj { get; set; }
@@ -19,11 +14,5 @@ namespace GestaoOficina.Entities
         public string? AddressCity { get; set; }
         public string? AddressState { get; set; }
         public string? Notes { get; set; }
-        public bool IsActive { get; set; }
-        public DateTime CreatedAt { get; set; }
-
-        public Tenant Tenant { get; set; }
-        public CustomerLegalType LegalType { get; set; }
-        public ICollection<CustomerUnit> CustomerUnits { get; set; }
     }
 }

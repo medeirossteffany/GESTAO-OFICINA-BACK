@@ -16,6 +16,7 @@ namespace GestaoOficina.Data
         public DbSet<CustomerLegalType> CustomerLegalTypes { get; set; }
         public DbSet<CustomerCategory> CustomerCategories { get; set; }
         public DbSet<Customer> Customers { get; set; }
+        public DbSet<CustomerUnit> CustomerUnits { get; set; }
         public DbSet<Vehicle> Vehicles { get; set; }
         public DbSet<ServiceOrderStatus> ServiceOrderStatuses { get; set; }
         public DbSet<ServiceOrder> ServiceOrders { get; set; }
@@ -32,6 +33,7 @@ namespace GestaoOficina.Data
             modelBuilder.ApplyConfiguration(new CustomerLegalTypeConfiguration());
             modelBuilder.ApplyConfiguration(new CustomerCategoryConfiguration());
             modelBuilder.ApplyConfiguration(new CustomerConfiguration());
+            modelBuilder.ApplyConfiguration(new CustomerUnitConfiguration());
             modelBuilder.ApplyConfiguration(new VehicleConfiguration());
             modelBuilder.ApplyConfiguration(new ServiceOrderStatusConfiguration());
             modelBuilder.ApplyConfiguration(new ServiceOrderConfiguration());

@@ -20,6 +20,7 @@ namespace GestaoOficina.Entities
         public Tenant Tenant { get; set; }
         public ICollection<User> Users { get; set; }
         public ICollection<UserUnit> UserUnits { get; set; }
+        public ICollection<CustomerUnit> CustomerUnits { get; set; }
         public ICollection<ServiceOrder> ServiceOrders { get; set; }
     }
 }

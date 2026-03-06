@@ -62,7 +62,6 @@ namespace GestaoOficina.Controllers
             if (loggedUser == null || !loggedUser.FullAccess)
                 return Forbid();
 
-            // Validação: Admins são atribuídos a todas as units automaticamente
             var isAdmin = Enum.TryParse<UserRole>(dto.Role, true, out var role) && role == UserRole.Admin;
             if (isAdmin && dto.UnitIds != null && dto.UnitIds.Count > 0)
                 return BadRequest("Usuários admin são atribuidos a todas as units automaticamente. Não é possível especificar unidades individuais.");
@@ -103,7 +102,6 @@ namespace GestaoOficina.Controllers
             if (loggedUser.TenantId != userToUpdate.TenantId)
                 return Forbid();
 
-            // Validação: Admins são atribuídos a todas as units automaticamente
             var isAdmin = Enum.TryParse<UserRole>(dto.Role, true, out var role) && role == UserRole.Admin;
             if (isAdmin && dto.UnitIds != null && dto.UnitIds.Count > 0)
                 return BadRequest("Usuários admin são atribuidos a todas as units automaticamente. Não é possível especificar unidades individuais.");

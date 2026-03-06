@@ -9,6 +9,7 @@ using GestaoOficina.Features.Onboarding;
 using GestaoOficina.Features.Tenants;
 using GestaoOficina.Features.Users;
 using GestaoOficina.Features.Units;
+using GestaoOficina.Features.Customers;
 using DotNetEnv;
 
 Env.Load();
@@ -71,6 +72,7 @@ builder.Services.AddScoped<OnboardingService>();
 builder.Services.AddScoped<TenantService>();
 builder.Services.AddScoped<UserService>();
 builder.Services.AddScoped<UnitService>();
+builder.Services.AddScoped<CustomerService>();
 
 var app = builder.Build();
 

@@ -10,6 +10,8 @@ namespace GestaoOficina.Data.Configurations
         {
             builder.HasKey(c => c.Id);
             builder.Property(c => c.Name).IsRequired();
+            builder.Property(c => c.CpfCnpj).HasColumnName("cpf/cnpj");
+            builder.Property(c => c.IsActive).HasDefaultValue(true).IsRequired();
             builder.Property(c => c.CreatedAt).IsRequired();
             builder.HasOne(c => c.Tenant)
                 .WithMany(t => t.Customers)
@@ -17,10 +19,6 @@ namespace GestaoOficina.Data.Configurations
             builder.HasOne(c => c.LegalType)
                 .WithMany()
                 .HasForeignKey(c => c.LegalTypeId);
-            builder.HasOne(c => c.Category)
-                .WithMany()
-                .HasForeignKey(c => c.CategoryId)
-                .IsRequired(false);
         }
     }
 }
