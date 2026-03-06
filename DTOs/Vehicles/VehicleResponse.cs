@@ -1,8 +1,6 @@
-using System;
-
-namespace GestaoOficina.Entities
+namespace GestaoOficina.DTOs.Vehicles
 {
-    public class Vehicle
+    public class VehicleResponse
     {
         public int Id { get; set; }
         public int TenantId { get; set; }
@@ -17,8 +15,5 @@ namespace GestaoOficina.Entities
         public string? InsuranceClaimNumber { get; set; }
         public string? Notes { get; set; }
         public DateTime CreatedAt { get; set; }
-
-        public Tenant Tenant { get; set; }
-        public Customer Customer { get; set; }
     }
 }
