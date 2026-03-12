@@ -13,6 +13,12 @@ namespace GestaoOficina.Data.Configurations
             builder.Property(sos => sos.Name).IsRequired();
             builder.Property(sos => sos.SortOrder).IsRequired();
             builder.HasIndex(sos => sos.Code).IsUnique();
+
+            builder.HasData(
+                new ServiceOrderStatus { Id = 1, Code = "ENVIADO", Name = "Enviado", SortOrder = 1 },
+                new ServiceOrderStatus { Id = 2, Code = "FEITO", Name = "Feito", SortOrder = 2 },
+                new ServiceOrderStatus { Id = 3, Code = "FINALIZADO", Name = "Finalizado", SortOrder = 3 }
+            );
         }
     }
 }

@@ -9,7 +9,6 @@ namespace GestaoOficina.Entities
         public int UnitId { get; set; }
         public int VehicleId { get; set; }
         public int OwnerCustomerId { get; set; }
-        public int PayerCustomerId { get; set; }
         public int StatusId { get; set; }
         public DateTime EntryDate { get; set; }
         public DateTime? EstimatedDeliveryDate { get; set; }
@@ -21,7 +20,6 @@ namespace GestaoOficina.Entities
         public decimal PartsValue { get; set; }
         public decimal TotalDiscount { get; set; }
         public decimal TotalAmount { get; set; }
-        public string? Notes { get; set; }
         public DateTime CreatedAt { get; set; }
         public DateTime UpdatedAt { get; set; }
 
@@ -29,7 +27,6 @@ namespace GestaoOficina.Entities
         public Unit Unit { get; set; }
         public Vehicle Vehicle { get; set; }
         public Customer OwnerCustomer { get; set; }
-        public Customer PayerCustomer { get; set; }
         public ServiceOrderStatus Status { get; set; }
     }
 }

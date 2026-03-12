@@ -29,9 +29,6 @@ namespace GestaoOficina.Data.Configurations
             builder.HasOne(so => so.OwnerCustomer)
                 .WithMany()
                 .HasForeignKey(so => so.OwnerCustomerId);
-            builder.HasOne(so => so.PayerCustomer)
-                .WithMany()
-                .HasForeignKey(so => so.PayerCustomerId);
             builder.HasOne(so => so.Status)
                 .WithMany()
                 .HasForeignKey(so => so.StatusId);
