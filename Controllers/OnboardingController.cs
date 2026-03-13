@@ -17,12 +17,12 @@ namespace GestaoOficina.Controllers
         [HttpPost]
         public async Task<IActionResult> Onboard(OnboardingRequest dto)
         {
-            var (tenant, units, user) = await _service.OnboardAsync(dto);
-            return Ok(new 
-            { 
-                TenantId = tenant.Id, 
-                UnitIds = units.Select(u => u.Id).ToList(),
-                UserId = user.Id 
+            var (tenant, unit, user) = await _service.OnboardAsync(dto);
+            return Ok(new
+            {
+                TenantId = tenant.Id,
+                UnitId = unit.Id,
+                UserId = user.Id
             });
         }
     }

@@ -12,7 +12,7 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace GestaoOficina.Migrations
 {
     [DbContext(typeof(AppDbContext))]
-    [Migration("20260303164901_InitialCreate")]
+    [Migration("20260313111238_InitialCreate")]
     partial class InitialCreate
     {
         /// <inheritdoc />
@@ -51,20 +51,20 @@ namespace GestaoOficina.Migrations
                     b.Property<string>("AddressZip")
                         .HasColumnType("longtext");
 
-                    b.Property<int?>("CategoryId")
-                        .HasColumnType("int");
-
-                    b.Property<string>("Cnpj")
-                        .HasColumnType("longtext");
-
-                    b.Property<string>("Cpf")
-                        .HasColumnType("longtext");
+                    b.Property<string>("CpfCnpj")
+                        .HasColumnType("longtext")
+                        .HasColumnName("cpf/cnpj");
 
                     b.Property<DateTime>("CreatedAt")
                         .HasColumnType("datetime(6)");
 
                     b.Property<string>("Email")
                         .HasColumnType("longtext");
+
+                    b.Property<bool>("IsActive")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("tinyint(1)")
+                        .HasDefaultValue(true);
 
                     b.Property<int>("LegalTypeId")
                         .HasColumnType("int");
@@ -79,15 +79,10 @@ namespace GestaoOficina.Migrations
                     b.Property<string>("Phone")
                         .HasColumnType("longtext");
 
-                    b.Property<string>("StateRegistration")
-                        .HasColumnType("longtext");
-
                     b.Property<int>("TenantId")
                         .HasColumnType("int");
 
                     b.HasKey("Id");
-
-                    b.HasIndex("CategoryId");
 
                     b.HasIndex("LegalTypeId");
 
@@ -146,6 +141,44 @@ namespace GestaoOficina.Migrations
                         .IsUnique();
 
                     b.ToTable("CustomerLegalTypes");
+
+                    b.HasData(
+                        new
+                        {
+                            Id = 1,
+                            Code = "PF",
+                            Name = "Cliente Físico"
+                        },
+                        new
+                        {
+                            Id = 2,
+                            Code = "PJ",
+                            Name = "Cliente Empresa"
+                        });
+                });
+
+            modelBuilder.Entity("GestaoOficina.Entities.CustomerUnit", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    MySqlPropertyBuilderExtensions.UseMySqlIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<int>("CustomerId")
+                        .HasColumnType("int");
+
+                    b.Property<int>("UnitId")
+                        .HasColumnType("int");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("UnitId");
+
+                    b.HasIndex("CustomerId", "UnitId")
+                        .IsUnique();
+
+                    b.ToTable("CustomerUnits");
                 });
 
             modelBuilder.Entity("GestaoOficina.Entities.ServiceOrder", b =>
@@ -176,9 +209,6 @@ namespace GestaoOficina.Migrations
                     b.Property<DateTime?>("EstimatedDeliveryDate")
                         .HasColumnType("datetime(6)");
 
-                    b.Property<string>("Notes")
-                        .HasColumnType("longtext");
-
                     b.Property<int>("OwnerCustomerId")
                         .HasColumnType("int");
 
@@ -194,9 +224,6 @@ namespace GestaoOficina.Migrations
                         .ValueGeneratedOnAdd()
                         .HasColumnType("decimal(65,30)")
                         .HasDefaultValue(0m);
-
-                    b.Property<int>("PayerCustomerId")
-                        .HasColumnType("int");
 
                     b.Property<int>("StatusId")
                         .HasColumnType("int");
@@ -225,8 +252,6 @@ namespace GestaoOficina.Migrations
 
                     b.HasIndex("OwnerCustomerId");
 
-                    b.HasIndex("PayerCustomerId");
-
                     b.HasIndex("StatusId");
 
                     b.HasIndex("TenantId");
@@ -253,20 +278,11 @@ namespace GestaoOficina.Migrations
                         .IsRequired()
                         .HasColumnType("longtext");
 
-                    b.Property<string>("Manufacturer")
-                        .HasColumnType("longtext");
-
-                    b.Property<string>("PartNumber")
-                        .HasColumnType("longtext");
-
                     b.Property<decimal>("Quantity")
                         .HasColumnType("decimal(65,30)");
 
                     b.Property<int>("ServiceOrderId")
                         .HasColumnType("int");
-
-                    b.Property<string>("Sku")
-                        .HasColumnType("longtext");
 
                     b.Property<int>("TenantId")
                         .HasColumnType("int");
@@ -310,7 +326,30 @@ namespace GestaoOficina.Migrations
                     b.HasIndex("Code")
                         .IsUnique();
 
-                    b.ToTable("ServiceOrderStatuses");
+                    b.ToTable("ServiceOrderStatus", (string)null);
+
+                    b.HasData(
+                        new
+                        {
+                            Id = 1,
+                            Code = "ENVIADO",
+                            Name = "Enviado",
+                            SortOrder = 1
+                        },
+                        new
+                        {
+                            Id = 2,
+                            Code = "FEITO",
+                            Name = "Feito",
+                            SortOrder = 2
+                        },
+                        new
+                        {
+                            Id = 3,
+                            Code = "FINALIZADO",
+                            Name = "Finalizado",
+                            SortOrder = 3
+                        });
                 });
 
             modelBuilder.Entity("GestaoOficina.Entities.ServiceOrderTimeline", b =>
@@ -370,9 +409,6 @@ namespace GestaoOficina.Migrations
 
                     MySqlPropertyBuilderExtensions.UseMySqlIdentityColumn(b.Property<int>("Id"));
 
-                    b.Property<string>("Cnpj")
-                        .HasColumnType("longtext");
-
                     b.Property<DateTime>("CreatedAt")
                         .HasColumnType("datetime(6)");
 
@@ -380,7 +416,12 @@ namespace GestaoOficina.Migrations
                         .IsRequired()
                         .HasColumnType("longtext");
 
+                    b.Property<int?>("UnitId")
+                        .HasColumnType("int");
+
                     b.HasKey("Id");
+
+                    b.HasIndex("UnitId");
 
                     b.ToTable("Tenants");
                 });
@@ -418,7 +459,7 @@ namespace GestaoOficina.Migrations
                         .HasColumnType("longtext");
 
                     b.Property<string>("Cnpj")
-                        .HasColumnType("longtext");
+                        .HasColumnType("varchar(255)");
 
                     b.Property<DateTime>("CreatedAt")
                         .HasColumnType("datetime(6)");
@@ -432,7 +473,9 @@ namespace GestaoOficina.Migrations
 
                     b.HasKey("Id");
 
-                    b.HasIndex("TenantId");
+                    b.HasIndex("TenantId", "Cnpj")
+                        .IsUnique()
+                        .HasFilter("[Cnpj] IS NOT NULL");
 
                     b.ToTable("Units");
                 });
@@ -492,7 +535,7 @@ namespace GestaoOficina.Migrations
                         .HasColumnType("longtext");
 
                     b.Property<string>("PhoneNumber")
-                        .HasColumnType("longtext");
+                        .HasColumnType("varchar(255)");
 
                     b.Property<bool>("PhoneNumberConfirmed")
                         .HasColumnType("tinyint(1)");
@@ -519,6 +562,10 @@ namespace GestaoOficina.Migrations
 
                     b.HasKey("Id");
 
+                    b.HasIndex("Email")
+                        .IsUnique()
+                        .HasFilter("[Email] IS NOT NULL");
+
                     b.HasIndex("NormalizedEmail")
                         .HasDatabaseName("EmailIndex");
 
@@ -526,10 +573,13 @@ namespace GestaoOficina.Migrations
                         .IsUnique()
                         .HasDatabaseName("UserNameIndex");
 
-                    b.HasIndex("UnitId");
+                    b.HasIndex("PhoneNumber")
+                        .IsUnique()
+                        .HasFilter("[PhoneNumber] IS NOT NULL");
 
-                    b.HasIndex("TenantId", "Email")
-                        .IsUnique();
+                    b.HasIndex("TenantId");
+
+                    b.HasIndex("UnitId");
 
                     b.ToTable("AspNetUsers", (string)null);
                 });
@@ -578,6 +628,9 @@ namespace GestaoOficina.Migrations
 
                     b.Property<int>("CustomerId")
                         .HasColumnType("int");
+
+                    b.Property<string>("InsuranceClaimNumber")
+                        .HasColumnType("longtext");
 
                     b.Property<string>("Model")
                         .IsRequired()
@@ -746,10 +799,6 @@ namespace GestaoOficina.Migrations
 
             modelBuilder.Entity("GestaoOficina.Entities.Customer", b =>
                 {
-                    b.HasOne("GestaoOficina.Entities.CustomerCategory", "Category")
-                        .WithMany()
-                        .HasForeignKey("CategoryId");
-
                     b.HasOne("GestaoOficina.Entities.CustomerLegalType", "LegalType")
                         .WithMany()
                         .HasForeignKey("LegalTypeId")
@@ -761,8 +810,6 @@ namespace GestaoOficina.Migrations
                         .HasForeignKey("TenantId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
-
-                    b.Navigation("Category");
 
                     b.Navigation("LegalType");
 
@@ -780,17 +827,30 @@ namespace GestaoOficina.Migrations
                     b.Navigation("Tenant");
                 });
 
+            modelBuilder.Entity("GestaoOficina.Entities.CustomerUnit", b =>
+                {
+                    b.HasOne("GestaoOficina.Entities.Customer", "Customer")
+                        .WithMany("CustomerUnits")
+                        .HasForeignKey("CustomerId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("GestaoOficina.Entities.Unit", "Unit")
+                        .WithMany("CustomerUnits")
+                        .HasForeignKey("UnitId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Customer");
+
+                    b.Navigation("Unit");
+                });
+
             modelBuilder.Entity("GestaoOficina.Entities.ServiceOrder", b =>
                 {
                     b.HasOne("GestaoOficina.Entities.Customer", "OwnerCustomer")
                         .WithMany()
                         .HasForeignKey("OwnerCustomerId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
-                    b.HasOne("GestaoOficina.Entities.Customer", "PayerCustomer")
-                        .WithMany()
-                        .HasForeignKey("PayerCustomerId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
@@ -819,8 +879,6 @@ namespace GestaoOficina.Migrations
                         .IsRequired();
 
                     b.Navigation("OwnerCustomer");
-
-                    b.Navigation("PayerCustomer");
 
                     b.Navigation("Status");
 
@@ -885,6 +943,16 @@ namespace GestaoOficina.Migrations
                     b.Navigation("Tenant");
 
                     b.Navigation("User");
+                });
+
+            modelBuilder.Entity("GestaoOficina.Entities.Tenant", b =>
+                {
+                    b.HasOne("GestaoOficina.Entities.Unit", "Unit")
+                        .WithMany()
+                        .HasForeignKey("UnitId")
+                        .OnDelete(DeleteBehavior.Restrict);
+
+                    b.Navigation("Unit");
                 });
 
             modelBuilder.Entity("GestaoOficina.Entities.Unit", b =>
@@ -1002,6 +1070,11 @@ namespace GestaoOficina.Migrations
                         .IsRequired();
                 });
 
+            modelBuilder.Entity("GestaoOficina.Entities.Customer", b =>
+                {
+                    b.Navigation("CustomerUnits");
+                });
+
             modelBuilder.Entity("GestaoOficina.Entities.Tenant", b =>
                 {
                     b.Navigation("CustomerCategories");
@@ -1023,6 +1096,8 @@ namespace GestaoOficina.Migrations
 
             modelBuilder.Entity("GestaoOficina.Entities.Unit", b =>
                 {
+                    b.Navigation("CustomerUnits");
+
                     b.Navigation("ServiceOrders");
 
                     b.Navigation("UserUnits");

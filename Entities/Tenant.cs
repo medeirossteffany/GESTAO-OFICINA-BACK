@@ -7,9 +7,10 @@ namespace GestaoOficina.Entities
     {
         public int Id { get; set; }
         public string Name { get; set; }
-        public string? Cnpj { get; set; }
+        public int? UnitId { get; set; }
         public DateTime CreatedAt { get; set; }
 
+        public Unit? Unit { get; set; }
         public ICollection<Unit> Units { get; set; }
         public ICollection<User> Users { get; set; }
         public ICollection<CustomerCategory> CustomerCategories { get; set; }

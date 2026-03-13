@@ -11,6 +11,7 @@ using GestaoOficina.Features.Users;
 using GestaoOficina.Features.Units;
 using GestaoOficina.Features.Customers;
 using GestaoOficina.Features.Vehicles;
+using GestaoOficina.Features.ServiceOrders;
 using DotNetEnv;
 
 Env.Load();
@@ -75,6 +76,7 @@ builder.Services.AddScoped<UserService>();
 builder.Services.AddScoped<UnitService>();
 builder.Services.AddScoped<CustomerService>();
 builder.Services.AddScoped<VehicleService>();
+builder.Services.AddScoped<ServiceOrderService>();
 
 var app = builder.Build();
 

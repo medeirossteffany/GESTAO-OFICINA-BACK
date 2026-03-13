@@ -323,50 +323,29 @@ namespace GestaoOficina.Migrations
                     b.HasIndex("Code")
                         .IsUnique();
 
-                    b.ToTable("ServiceOrderStatuses");
+                    b.ToTable("ServiceOrderStatus", (string)null);
 
                     b.HasData(
                         new
                         {
                             Id = 1,
-                            Code = "PENDENTE",
-                            Name = "Pendente",
+                            Code = "ENVIADO",
+                            Name = "Enviado",
                             SortOrder = 1
                         },
                         new
                         {
                             Id = 2,
-                            Code = "ENVIADO",
-                            Name = "Enviado",
+                            Code = "FEITO",
+                            Name = "Feito",
                             SortOrder = 2
                         },
                         new
                         {
                             Id = 3,
-                            Code = "FEITO",
-                            Name = "Feito",
-                            SortOrder = 3
-                        },
-                        new
-                        {
-                            Id = 4,
-                            Code = "FATURADO",
-                            Name = "Faturado",
-                            SortOrder = 4
-                        },
-                        new
-                        {
-                            Id = 5,
-                            Code = "PAGO",
-                            Name = "Pago",
-                            SortOrder = 5
-                        },
-                        new
-                        {
-                            Id = 6,
                             Code = "FINALIZADO",
                             Name = "Finalizado",
-                            SortOrder = 6
+                            SortOrder = 3
                         });
                 });
 
@@ -427,9 +406,6 @@ namespace GestaoOficina.Migrations
 
                     MySqlPropertyBuilderExtensions.UseMySqlIdentityColumn(b.Property<int>("Id"));
 
-                    b.Property<string>("Cnpj")
-                        .HasColumnType("varchar(255)");
-
                     b.Property<DateTime>("CreatedAt")
                         .HasColumnType("datetime(6)");
 
@@ -437,11 +413,12 @@ namespace GestaoOficina.Migrations
                         .IsRequired()
                         .HasColumnType("longtext");
 
+                    b.Property<int?>("UnitId")
+                        .HasColumnType("int");
+
                     b.HasKey("Id");
 
-                    b.HasIndex("Cnpj")
-                        .IsUnique()
-                        .HasFilter("[Cnpj] IS NOT NULL");
+                    b.HasIndex("UnitId");
 
                     b.ToTable("Tenants");
                 });
@@ -963,6 +940,16 @@ namespace GestaoOficina.Migrations
                     b.Navigation("Tenant");
 
                     b.Navigation("User");
+                });
+
+            modelBuilder.Entity("GestaoOficina.Entities.Tenant", b =>
+                {
+                    b.HasOne("GestaoOficina.Entities.Unit", "Unit")
+                        .WithMany()
+                        .HasForeignKey("UnitId")
+                        .OnDelete(DeleteBehavior.Restrict);
+
+                    b.Navigation("Unit");
                 });
 
             modelBuilder.Entity("GestaoOficina.Entities.Unit", b =>

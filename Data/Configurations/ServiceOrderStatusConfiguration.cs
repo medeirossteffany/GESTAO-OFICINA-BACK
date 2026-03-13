@@ -8,6 +8,7 @@ namespace GestaoOficina.Data.Configurations
     {
         public void Configure(EntityTypeBuilder<ServiceOrderStatus> builder)
         {
+            builder.ToTable("ServiceOrderStatus");
             builder.HasKey(sos => sos.Id);
             builder.Property(sos => sos.Code).IsRequired();
             builder.Property(sos => sos.Name).IsRequired();

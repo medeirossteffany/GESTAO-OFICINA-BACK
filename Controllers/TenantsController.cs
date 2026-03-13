@@ -18,10 +18,10 @@ namespace GestaoOficina.Controllers
         }
 
         [HttpPost]
-        public ActionResult<Tenant> CreateTenant(CreateTenantRequest dto)
+        public async Task<ActionResult<Tenant>> CreateTenant(CreateTenantRequest dto)
         {
-            var tenant = _service.CreateTenant(dto);
-            return CreatedAtAction(nameof(CreateTenant), new { id = tenant.Id }, tenant);
+            var tenant = await _service.CreateTenant(dto);
+            return CreatedAtAction(nameof(GetTenant), new { id = tenant.Id }, tenant);
         }
 
         [HttpGet("{id}")]
