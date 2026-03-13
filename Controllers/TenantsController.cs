@@ -21,38 +21,51 @@ namespace GestaoOficina.Controllers
         public async Task<ActionResult<Tenant>> CreateTenant(CreateTenantRequest dto)
         {
             var tenant = await _service.CreateTenant(dto);
-            return CreatedAtAction(nameof(GetTenant), new { id = tenant.Id }, tenant);
+            return CreatedAtAction(nameof(GetMyTenant), tenant);
         }
 
-        [HttpGet("{id}")]
+        [HttpGet]
         [Authorize]
-        public async Task<ActionResult<Tenant>> GetTenant(int id)
+        public async Task<ActionResult> GetMyTenant()
         {
-            var tenant = await _service.GetTenant(id);
+            var tenantIdClaim = User.FindFirstValue("TenantId");
+            if (!int.TryParse(tenantIdClaim, out var tenantId))
+                return Unauthorized();
+
+            var tenant = await _service.GetTenant(tenantId);
             if (tenant == null)
                 return NotFound();
 
-            return Ok(tenant);
+            return Ok(new
+            {
+                tenant.Name,
+                Cnpj = tenant.Unit?.Cnpj,
+                tenant.CreatedAt
+            });
         }
 
-        [HttpPut("{id}")]
+        [HttpPatch]
         [Authorize(Roles = "Admin")]
-        public async Task<ActionResult<Tenant>> UpdateTenant(int id, UpdateTenantRequest dto)
+        public async Task<ActionResult> UpdateTenant(UpdateTenantRequest dto)
         {
-           
-            var loggedTenantId = int.Parse(User.FindFirstValue("TenantId"));
-            if (loggedTenantId != id)
-                return Forbid();
+            var tenantIdClaim = User.FindFirstValue("TenantId");
+            if (!int.TryParse(tenantIdClaim, out var tenantId))
+                return Unauthorized();
 
             var fullAccess = bool.Parse(User.FindFirstValue("FullAccess") ?? "false");
             if (!fullAccess)
                 return Forbid();
 
-            var tenant = await _service.UpdateTenant(id, dto);
+            var tenant = await _service.UpdateTenant(tenantId, dto);
             if (tenant == null)
                 return NotFound();
 
-            return Ok(tenant);
+            return Ok(new
+            {
+                tenant.Name,
+                Cnpj = tenant.Unit?.Cnpj,
+                tenant.CreatedAt
+            });
         }
     }
 }

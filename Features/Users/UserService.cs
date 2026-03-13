@@ -114,36 +114,38 @@ namespace GestaoOficina.Features.Users
             {
                 var existingUserByPhone = await _context.Users
                     .FirstOrDefaultAsync(u => u.Id != userId && u.PhoneNumber == dto.PhoneNumber);
-                
+
                 if (existingUserByPhone != null)
                 {
                     throw new InvalidOperationException($"O telefone {dto.PhoneNumber} já está registrado no sistema.");
                 }
             }
 
-            user.Name = dto.Name;
-            user.PhoneNumber = dto.PhoneNumber;
+            if (dto.Name is not null) user.Name = dto.Name;
+            if (dto.PhoneNumber is not null) user.PhoneNumber = dto.PhoneNumber;
 
             _context.Users.Update(user);
             await _context.SaveChangesAsync();
             return user;
         }
+
         public async Task<User?> UpdateUserAsync(int userId, UpdateUserRequest dto)
         {
             var user = await _context.Users
                 .Include(u => u.UserUnits)
                 .FirstOrDefaultAsync(u => u.Id == userId);
-            
+
             if (user == null) return null;
 
-            if (user.Email != dto.Email)
+            var targetEmail = dto.Email ?? user.Email;
+            if (user.Email != targetEmail)
             {
                 var existingUserByEmail = await _context.Users
-                    .FirstOrDefaultAsync(u => u.Id != userId && u.Email == dto.Email);
-                
+                    .FirstOrDefaultAsync(u => u.Id != userId && u.Email == targetEmail);
+
                 if (existingUserByEmail != null)
                 {
-                    throw new InvalidOperationException($"O email {dto.Email} já está registrado no sistema.");
+                    throw new InvalidOperationException($"O email {targetEmail} já está registrado no sistema.");
                 }
             }
 
@@ -151,52 +153,58 @@ namespace GestaoOficina.Features.Users
             {
                 var existingUserByPhone = await _context.Users
                     .FirstOrDefaultAsync(u => u.Id != userId && u.PhoneNumber == dto.PhoneNumber);
-                
+
                 if (existingUserByPhone != null)
                 {
                     throw new InvalidOperationException($"O telefone {dto.PhoneNumber} já está registrado no sistema.");
                 }
             }
 
-            var parsedRole = Enum.TryParse<UserRole>(dto.Role, true, out var role) ? role : UserRole.Comum;
-
-            user.Name = dto.Name;
-            user.Email = dto.Email;
-            user.UserName = dto.Email;
-            user.PhoneNumber = dto.PhoneNumber;
-            user.Role = parsedRole;
-            user.IsActive = dto.IsActive;
-            user.FullAccess = parsedRole == UserRole.Admin ? true : dto.FullAccess;
-
-            var existingUnits = user.UserUnits.ToList();
-            _context.UserUnits.RemoveRange(existingUnits);
-
-            if (parsedRole == UserRole.Admin)
+            var parsedRole = user.Role;
+            if (!string.IsNullOrWhiteSpace(dto.Role))
             {
-                var tenantUnits = await _context.Units
-                    .Where(u => u.TenantId == user.TenantId)
-                    .ToListAsync();
-
-                foreach (var unit in tenantUnits)
-                {
-                    var userUnit = new UserUnit
-                    {
-                        UserId = user.Id,
-                        UnitId = unit.Id
-                    };
-                    _context.UserUnits.Add(userUnit);
-                }
+                parsedRole = Enum.TryParse<UserRole>(dto.Role, true, out var role) ? role : UserRole.Comum;
             }
-            else if (dto.UnitIds != null && dto.UnitIds.Count > 0)
+
+            if (dto.Name is not null) user.Name = dto.Name;
+            user.Email = targetEmail;
+            user.UserName = targetEmail;
+            if (dto.PhoneNumber is not null) user.PhoneNumber = dto.PhoneNumber;
+            user.Role = parsedRole;
+            if (dto.IsActive.HasValue) user.IsActive = dto.IsActive.Value;
+            user.FullAccess = parsedRole == UserRole.Admin ? true : (dto.FullAccess ?? user.FullAccess);
+
+            var shouldUpdateUnits = !string.IsNullOrWhiteSpace(dto.Role) || dto.UnitIds is not null;
+            if (shouldUpdateUnits)
             {
-                foreach (var unitId in dto.UnitIds)
+                var existingUnits = user.UserUnits.ToList();
+                _context.UserUnits.RemoveRange(existingUnits);
+
+                if (parsedRole == UserRole.Admin)
                 {
-                    var userUnit = new UserUnit
+                    var tenantUnits = await _context.Units
+                        .Where(u => u.TenantId == user.TenantId)
+                        .ToListAsync();
+
+                    foreach (var unit in tenantUnits)
                     {
-                        UserId = user.Id,
-                        UnitId = unitId
-                    };
-                    _context.UserUnits.Add(userUnit);
+                        _context.UserUnits.Add(new UserUnit
+                        {
+                            UserId = user.Id,
+                            UnitId = unit.Id
+                        });
+                    }
+                }
+                else if (dto.UnitIds is { Count: > 0 })
+                {
+                    foreach (var unitId in dto.UnitIds)
+                    {
+                        _context.UserUnits.Add(new UserUnit
+                        {
+                            UserId = user.Id,
+                            UnitId = unitId
+                        });
+                    }
                 }
             }
 

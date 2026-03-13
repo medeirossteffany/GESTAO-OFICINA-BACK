@@ -84,7 +84,7 @@ namespace GestaoOficina.Controllers
             return CreatedAtAction(nameof(CreateUser), new { id = user.Id }, response);
         }
 
-        [HttpPut("{id}")]
+        [HttpPatch("{id}")]
         public async Task<ActionResult<UserResponse>> UpdateUser(int id, UpdateUserRequest dto)
         {
             var loggedUserIdStr = User.FindFirstValue(ClaimTypes.NameIdentifier);
@@ -102,7 +102,8 @@ namespace GestaoOficina.Controllers
             if (loggedUser.TenantId != userToUpdate.TenantId)
                 return Forbid();
 
-            var isAdmin = Enum.TryParse<UserRole>(dto.Role, true, out var role) && role == UserRole.Admin;
+            var roleToValidate = dto.Role ?? userToUpdate.Role.ToString();
+            var isAdmin = Enum.TryParse<UserRole>(roleToValidate, true, out var role) && role == UserRole.Admin;
             if (isAdmin && dto.UnitIds != null && dto.UnitIds.Count > 0)
                 return BadRequest("Usuários admin são atribuidos a todas as units automaticamente. Não é possível especificar unidades individuais.");
 
@@ -168,7 +169,7 @@ namespace GestaoOficina.Controllers
             return Ok(user);
         }
 
-        [HttpPut("me")]
+        [HttpPatch("me")]
         [AllowAnonymous]
         [Authorize]
         public async Task<ActionResult<User>> UpdateMyProfile(UpdateUserProfileRequest dto)

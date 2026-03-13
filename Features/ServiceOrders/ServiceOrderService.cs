@@ -174,13 +174,17 @@ namespace GestaoOficina.Features.ServiceOrders
 
             if (serviceOrder == null) return null;
 
-            if (!fullAccess && (!unitIds.Contains(serviceOrder.UnitId) || !unitIds.Contains(dto.UnitId)))
+            var targetUnitId = dto.UnitId ?? serviceOrder.UnitId;
+            var targetVehicleId = dto.VehicleId ?? serviceOrder.VehicleId;
+            var targetOwnerCustomerId = dto.OwnerCustomerId ?? serviceOrder.OwnerCustomerId;
+
+            if (!fullAccess && (!unitIds.Contains(serviceOrder.UnitId) || !unitIds.Contains(targetUnitId)))
             {
                 throw new InvalidOperationException("Usuário sem acesso à unidade informada.");
             }
 
             var unitExists = await _context.Units
-                .AnyAsync(u => u.Id == dto.UnitId && u.TenantId == tenantId);
+                .AnyAsync(u => u.Id == targetUnitId && u.TenantId == tenantId);
 
             if (!unitExists)
             {
@@ -188,7 +192,7 @@ namespace GestaoOficina.Features.ServiceOrders
             }
 
             var vehicle = await _context.Vehicles
-                .FirstOrDefaultAsync(v => v.Id == dto.VehicleId && v.TenantId == tenantId);
+                .FirstOrDefaultAsync(v => v.Id == targetVehicleId && v.TenantId == tenantId);
 
             if (vehicle == null)
             {
@@ -197,14 +201,14 @@ namespace GestaoOficina.Features.ServiceOrders
 
             var ownerCustomer = await _context.Customers
                 .Include(c => c.CustomerUnits)
-                .FirstOrDefaultAsync(c => c.Id == dto.OwnerCustomerId && c.TenantId == tenantId && c.IsActive);
+                .FirstOrDefaultAsync(c => c.Id == targetOwnerCustomerId && c.TenantId == tenantId && c.IsActive);
 
             if (ownerCustomer == null)
             {
                 throw new InvalidOperationException("Cliente responsável inválido para o tenant informado.");
             }
 
-            var customerLinkedToUnit = ownerCustomer.CustomerUnits.Any(cu => cu.UnitId == dto.UnitId);
+            var customerLinkedToUnit = ownerCustomer.CustomerUnits.Any(cu => cu.UnitId == targetUnitId);
             if (!customerLinkedToUnit)
             {
                 throw new InvalidOperationException("Cliente responsável não está vinculado à unidade informada.");
@@ -220,8 +224,18 @@ namespace GestaoOficina.Features.ServiceOrders
             }
 
             var now = DateTime.UtcNow;
-            var partsValue = dto.Parts?.Sum(p => p.Quantity * p.UnitPrice) ?? 0m;
-            var totalAmount = dto.BodyworkValue + dto.PaintValue + partsValue - dto.TotalDiscount;
+
+            var partsValue = serviceOrder.PartsValue;
+            if (dto.Parts is not null)
+            {
+                partsValue = dto.Parts.Sum(p => p.Quantity * p.UnitPrice);
+            }
+
+            var bodyworkValue = dto.BodyworkValue ?? serviceOrder.BodyworkValue;
+            var paintValue = dto.PaintValue ?? serviceOrder.PaintValue;
+            var totalDiscount = dto.TotalDiscount ?? serviceOrder.TotalDiscount;
+
+            var totalAmount = bodyworkValue + paintValue + partsValue - totalDiscount;
             if (totalAmount < 0) totalAmount = 0;
 
             var oldStatusId = serviceOrder.StatusId;
@@ -229,18 +243,18 @@ namespace GestaoOficina.Features.ServiceOrders
 
             await using var transaction = await _context.Database.BeginTransactionAsync();
 
-            serviceOrder.UnitId = dto.UnitId;
-            serviceOrder.VehicleId = dto.VehicleId;
-            serviceOrder.OwnerCustomerId = dto.OwnerCustomerId;
-            serviceOrder.EntryDate = dto.EntryDate;
-            serviceOrder.EstimatedDeliveryDate = dto.EstimatedDeliveryDate;
-            serviceOrder.DeliveryDate = dto.DeliveryDate;
-            serviceOrder.BodyworkDescription = dto.BodyworkDescription;
-            serviceOrder.BodyworkValue = dto.BodyworkValue;
-            serviceOrder.PaintDescription = dto.PaintDescription;
-            serviceOrder.PaintValue = dto.PaintValue;
+            serviceOrder.UnitId = targetUnitId;
+            serviceOrder.VehicleId = targetVehicleId;
+            serviceOrder.OwnerCustomerId = targetOwnerCustomerId;
+            if (dto.EntryDate.HasValue) serviceOrder.EntryDate = dto.EntryDate.Value;
+            if (dto.EstimatedDeliveryDate is not null) serviceOrder.EstimatedDeliveryDate = dto.EstimatedDeliveryDate;
+            if (dto.DeliveryDate is not null) serviceOrder.DeliveryDate = dto.DeliveryDate;
+            if (dto.BodyworkDescription is not null) serviceOrder.BodyworkDescription = dto.BodyworkDescription;
+            serviceOrder.BodyworkValue = bodyworkValue;
+            if (dto.PaintDescription is not null) serviceOrder.PaintDescription = dto.PaintDescription;
+            serviceOrder.PaintValue = paintValue;
             serviceOrder.PartsValue = partsValue;
-            serviceOrder.TotalDiscount = dto.TotalDiscount;
+            serviceOrder.TotalDiscount = totalDiscount;
             serviceOrder.TotalAmount = totalAmount;
             serviceOrder.UpdatedAt = now;
 
@@ -251,29 +265,32 @@ namespace GestaoOficina.Features.ServiceOrders
 
             _context.ServiceOrders.Update(serviceOrder);
 
-            var existingParts = await _context.ServiceOrderParts
-                .Where(p => p.ServiceOrderId == serviceOrder.Id)
-                .ToListAsync();
-
-            if (existingParts.Count > 0)
+            if (dto.Parts is not null)
             {
-                _context.ServiceOrderParts.RemoveRange(existingParts);
-            }
+                var existingParts = await _context.ServiceOrderParts
+                    .Where(p => p.ServiceOrderId == serviceOrder.Id)
+                    .ToListAsync();
 
-            if (dto.Parts is { Count: > 0 })
-            {
-                var parts = dto.Parts.Select(p => new ServiceOrderPart
+                if (existingParts.Count > 0)
                 {
-                    TenantId = tenantId,
-                    ServiceOrderId = serviceOrder.Id,
-                    Description = p.Description,
-                    Quantity = p.Quantity,
-                    UnitPrice = p.UnitPrice,
-                    TotalPrice = p.Quantity * p.UnitPrice,
-                    CreatedAt = now
-                }).ToList();
+                    _context.ServiceOrderParts.RemoveRange(existingParts);
+                }
 
-                _context.ServiceOrderParts.AddRange(parts);
+                if (dto.Parts.Count > 0)
+                {
+                    var parts = dto.Parts.Select(p => new ServiceOrderPart
+                    {
+                        TenantId = tenantId,
+                        ServiceOrderId = serviceOrder.Id,
+                        Description = p.Description,
+                        Quantity = p.Quantity,
+                        UnitPrice = p.UnitPrice,
+                        TotalPrice = p.Quantity * p.UnitPrice,
+                        CreatedAt = now
+                    }).ToList();
+
+                    _context.ServiceOrderParts.AddRange(parts);
+                }
             }
 
             _context.ServiceOrderTimelines.Add(new ServiceOrderTimeline

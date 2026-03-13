@@ -118,26 +118,30 @@ namespace GestaoOficina.Features.Customers
 
             if (customer == null) return null;
 
-            var legalTypeExists = await _context.CustomerLegalTypes
-                .AnyAsync(lt => lt.Id == dto.LegalTypeId);
-
-            if (!legalTypeExists)
+            if (dto.LegalTypeId.HasValue)
             {
-                throw new InvalidOperationException("Tipo legal do cliente inválido.");
+                var legalTypeExists = await _context.CustomerLegalTypes
+                    .AnyAsync(lt => lt.Id == dto.LegalTypeId.Value);
+
+                if (!legalTypeExists)
+                {
+                    throw new InvalidOperationException("Tipo legal do cliente inválido.");
+                }
+
+                customer.LegalTypeId = dto.LegalTypeId.Value;
             }
 
-            customer.LegalTypeId = dto.LegalTypeId;
-            customer.Name = dto.Name;
-            customer.CpfCnpj = dto.CpfCnpj;
-            customer.Email = dto.Email;
-            customer.Phone = dto.Phone;
-            customer.AddressZip = dto.AddressZip;
-            customer.AddressStreet = dto.AddressStreet;
-            customer.AddressNumber = dto.AddressNumber;
-            customer.AddressDistrict = dto.AddressDistrict;
-            customer.AddressCity = dto.AddressCity;
-            customer.AddressState = dto.AddressState;
-            customer.Notes = dto.Notes;
+            if (dto.Name is not null) customer.Name = dto.Name;
+            if (dto.CpfCnpj is not null) customer.CpfCnpj = dto.CpfCnpj;
+            if (dto.Email is not null) customer.Email = dto.Email;
+            if (dto.Phone is not null) customer.Phone = dto.Phone;
+            if (dto.AddressZip is not null) customer.AddressZip = dto.AddressZip;
+            if (dto.AddressStreet is not null) customer.AddressStreet = dto.AddressStreet;
+            if (dto.AddressNumber is not null) customer.AddressNumber = dto.AddressNumber;
+            if (dto.AddressDistrict is not null) customer.AddressDistrict = dto.AddressDistrict;
+            if (dto.AddressCity is not null) customer.AddressCity = dto.AddressCity;
+            if (dto.AddressState is not null) customer.AddressState = dto.AddressState;
+            if (dto.Notes is not null) customer.Notes = dto.Notes;
 
             _context.Customers.Update(customer);
             await _context.SaveChangesAsync();

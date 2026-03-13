@@ -1,6 +1,7 @@
 using GestaoOficina.Entities;
 using GestaoOficina.DTOs.Tenants;
 using GestaoOficina.Data;
+using Microsoft.EntityFrameworkCore;
 
 namespace GestaoOficina.Features.Tenants
 {
@@ -27,15 +28,19 @@ namespace GestaoOficina.Features.Tenants
 
         public async Task<Tenant?> GetTenant(int id)
         {
-            return await _context.Tenants.FindAsync(id);
+            return await _context.Tenants
+                .Include(t => t.Unit)
+                .FirstOrDefaultAsync(t => t.Id == id);
         }
 
         public async Task<Tenant?> UpdateTenant(int id, UpdateTenantRequest dto)
         {
-            var tenant = await _context.Tenants.FindAsync(id);
+            var tenant = await _context.Tenants
+                .Include(t => t.Unit)
+                .FirstOrDefaultAsync(t => t.Id == id);
             if (tenant == null) return null;
 
-            tenant.Name = dto.Name;
+            if (dto.Name is not null) tenant.Name = dto.Name;
 
             _context.Tenants.Update(tenant);
             await _context.SaveChangesAsync();

@@ -88,33 +88,35 @@ namespace GestaoOficina.Features.Vehicles
 
             if (vehicle == null) return null;
 
-            var customer = await GetCustomerById(dto.CustomerId, tenantId);
+            var targetCustomerId = dto.CustomerId ?? vehicle.CustomerId;
+            var customer = await GetCustomerById(targetCustomerId, tenantId);
             if (customer == null)
             {
                 throw new InvalidOperationException("Cliente inválido para o tenant informado.");
             }
 
-            if (!string.Equals(vehicle.Plate, dto.Plate, StringComparison.OrdinalIgnoreCase))
+            var targetPlate = dto.Plate ?? vehicle.Plate;
+            if (!string.Equals(vehicle.Plate, targetPlate, StringComparison.OrdinalIgnoreCase))
             {
                 var duplicatePlate = await _context.Vehicles
-                    .AnyAsync(v => v.Id != id && v.TenantId == tenantId && v.Plate == dto.Plate);
+                    .AnyAsync(v => v.Id != id && v.TenantId == tenantId && v.Plate == targetPlate);
 
                 if (duplicatePlate)
                 {
-                    throw new InvalidOperationException($"A placa {dto.Plate} já está cadastrada para este tenant.");
+                    throw new InvalidOperationException($"A placa {targetPlate} já está cadastrada para este tenant.");
                 }
             }
 
-            vehicle.CustomerId = dto.CustomerId;
-            vehicle.Plate = dto.Plate;
-            vehicle.Brand = dto.Brand;
-            vehicle.Model = dto.Model;
-            vehicle.Year = dto.Year;
-            vehicle.Color = dto.Color;
-            vehicle.Vin = dto.Vin;
-            vehicle.Renavam = dto.Renavam;
-            vehicle.InsuranceClaimNumber = dto.InsuranceClaimNumber;
-            vehicle.Notes = dto.Notes;
+            vehicle.CustomerId = targetCustomerId;
+            vehicle.Plate = targetPlate;
+            if (dto.Brand is not null) vehicle.Brand = dto.Brand;
+            if (dto.Model is not null) vehicle.Model = dto.Model;
+            if (dto.Year.HasValue) vehicle.Year = dto.Year;
+            if (dto.Color is not null) vehicle.Color = dto.Color;
+            if (dto.Vin is not null) vehicle.Vin = dto.Vin;
+            if (dto.Renavam is not null) vehicle.Renavam = dto.Renavam;
+            if (dto.InsuranceClaimNumber is not null) vehicle.InsuranceClaimNumber = dto.InsuranceClaimNumber;
+            if (dto.Notes is not null) vehicle.Notes = dto.Notes;
 
             _context.Vehicles.Update(vehicle);
             await _context.SaveChangesAsync();

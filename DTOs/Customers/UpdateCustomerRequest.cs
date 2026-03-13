@@ -2,8 +2,8 @@ namespace GestaoOficina.DTOs.Customers
 {
     public class UpdateCustomerRequest
     {
-        public int LegalTypeId { get; set; }
-        public string Name { get; set; }
+        public int? LegalTypeId { get; set; }
+        public string? Name { get; set; }
         public string? CpfCnpj { get; set; }
         public string? Email { get; set; }
         public string? Phone { get; set; }

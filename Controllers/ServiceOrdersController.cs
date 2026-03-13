@@ -1,5 +1,6 @@
 using System.Security.Claims;
 using GestaoOficina.DTOs.ServiceOrders;
+using GestaoOficina.Entities;
 using GestaoOficina.Features.ServiceOrders;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
@@ -26,7 +27,7 @@ namespace GestaoOficina.Controllers
             var unitIds = User.FindAll("UnitId").Select(c => int.Parse(c.Value)).ToList();
 
             var serviceOrders = await _service.GetServiceOrdersByTenantAndUnits(loggedTenantId, unitIds, fullAccess);
-            return Ok(serviceOrders);
+            return Ok(serviceOrders.Select(ToResponse));
         }
 
         [HttpPost]
@@ -45,10 +46,10 @@ namespace GestaoOficina.Controllers
 
             var created = await _service.CreateServiceOrder(dto, loggedTenantId, unitIds, fullAccess);
 
-            return CreatedAtAction(nameof(GetServiceOrderById), new { id = created.Id }, created);
+            return CreatedAtAction(nameof(GetServiceOrderById), new { id = created.Id }, ToResponse(created));
         }
 
-        [HttpPut("{id}")]
+        [HttpPatch("{id}")]
         [Authorize(Roles = "Admin")]
         public async Task<IActionResult> UpdateServiceOrder(int id, [FromBody] UpdateServiceOrderRequest dto)
         {
@@ -62,12 +63,12 @@ namespace GestaoOficina.Controllers
             var existing = await _service.GetServiceOrderById(id);
             if (existing == null) return NotFound();
             if (!_service.HasAccess(existing, loggedTenantId, unitIds, fullAccess)) return Forbid();
-            if (!fullAccess && !unitIds.Contains(dto.UnitId)) return Forbid();
+            if (dto.UnitId.HasValue && !fullAccess && !unitIds.Contains(dto.UnitId.Value)) return Forbid();
 
             var updated = await _service.UpdateServiceOrder(id, dto, loggedTenantId, unitIds, fullAccess);
             if (updated == null) return NotFound();
 
-            return Ok(updated);
+            return Ok(ToResponse(updated));
         }
 
         [HttpGet("{id}")]
@@ -81,7 +82,7 @@ namespace GestaoOficina.Controllers
             if (serviceOrder == null) return NotFound();
             if (!_service.HasAccess(serviceOrder, loggedTenantId, unitIds, fullAccess)) return Forbid();
 
-            return Ok(serviceOrder);
+            return Ok(ToResponse(serviceOrder));
         }
 
         [HttpDelete("{id}")]
@@ -100,6 +101,36 @@ namespace GestaoOficina.Controllers
             if (!deleted) return NotFound();
 
             return NoContent();
+        }
+
+        private static object ToResponse(ServiceOrder so)
+        {
+            return new
+            {
+                so.Id,
+                so.TenantId,
+                so.UnitId,
+                UnitName = so.Unit?.Name,
+                so.VehicleId,
+                VehiclePlate = so.Vehicle?.Plate,
+                so.OwnerCustomerId,
+                OwnerCustomerName = so.OwnerCustomer?.Name,
+                so.StatusId,
+                StatusCode = so.Status?.Code,
+                StatusName = so.Status?.Name,
+                so.EntryDate,
+                so.EstimatedDeliveryDate,
+                so.DeliveryDate,
+                so.BodyworkDescription,
+                so.BodyworkValue,
+                so.PaintDescription,
+                so.PaintValue,
+                so.PartsValue,
+                so.TotalDiscount,
+                so.TotalAmount,
+                so.CreatedAt,
+                so.UpdatedAt
+            };
         }
     }
 }

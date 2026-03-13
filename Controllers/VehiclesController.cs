@@ -64,7 +64,7 @@ namespace GestaoOficina.Controllers
             return CreatedAtAction(nameof(GetVehicle), new { id = vehicle.Id }, ToResponse(vehicle));
         }
 
-        [HttpPut("{id}")]
+        [HttpPatch("{id}")]
         [Authorize(Roles = "Admin")]
         public async Task<ActionResult<VehicleResponse>> UpdateVehicle(int id, UpdateVehicleRequest dto)
         {
@@ -78,11 +78,14 @@ namespace GestaoOficina.Controllers
             var hasAccess = _service.HasAccessToVehicle(vehicle, loggedTenantId, unitIds, fullAccess);
             if (!hasAccess) return Forbid();
 
-            var targetCustomer = await _service.GetCustomerById(dto.CustomerId, loggedTenantId);
-            if (targetCustomer == null) return BadRequest("Cliente inválido para o tenant informado.");
+            if (dto.CustomerId.HasValue)
+            {
+                var targetCustomer = await _service.GetCustomerById(dto.CustomerId.Value, loggedTenantId);
+                if (targetCustomer == null) return BadRequest("Cliente inválido para o tenant informado.");
 
-            var hasAccessToTargetCustomer = _service.HasAccessToCustomer(targetCustomer, loggedTenantId, unitIds, fullAccess);
-            if (!hasAccessToTargetCustomer) return Forbid();
+                var hasAccessToTargetCustomer = _service.HasAccessToCustomer(targetCustomer, loggedTenantId, unitIds, fullAccess);
+                if (!hasAccessToTargetCustomer) return Forbid();
+            }
 
             var updatedVehicle = await _service.UpdateVehicle(id, dto, loggedTenantId);
             if (updatedVehicle == null) return NotFound();

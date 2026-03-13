@@ -72,14 +72,14 @@ namespace GestaoOficina.Features.Units
                 }
             }
 
-            unit.Name = dto.Name;
-            unit.Cnpj = dto.Cnpj;
-            unit.AddressZip = dto.AddressZip;
-            unit.AddressStreet = dto.AddressStreet;
-            unit.AddressNumber = dto.AddressNumber;
-            unit.AddressDistrict = dto.AddressDistrict;
-            unit.AddressCity = dto.AddressCity;
-            unit.AddressState = dto.AddressState;
+            if (dto.Name is not null) unit.Name = dto.Name;
+            if (dto.Cnpj is not null) unit.Cnpj = dto.Cnpj;
+            if (dto.AddressZip is not null) unit.AddressZip = dto.AddressZip;
+            if (dto.AddressStreet is not null) unit.AddressStreet = dto.AddressStreet;
+            if (dto.AddressNumber is not null) unit.AddressNumber = dto.AddressNumber;
+            if (dto.AddressDistrict is not null) unit.AddressDistrict = dto.AddressDistrict;
+            if (dto.AddressCity is not null) unit.AddressCity = dto.AddressCity;
+            if (dto.AddressState is not null) unit.AddressState = dto.AddressState;
 
             _context.Units.Update(unit);
             await _context.SaveChangesAsync();

@@ -67,7 +67,7 @@ namespace GestaoOficina.Controllers
             return Ok(response);
         }
 
-        [HttpPut("{id}")]
+        [HttpPatch("{id}")]
         [Authorize(Roles = "Admin")]
         public async Task<ActionResult<CustomerResponse>> UpdateCustomer(int id, UpdateCustomerRequest dto)
         {
