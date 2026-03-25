@@ -2,20 +2,15 @@
 {
     public class CreateServiceOrderRequest
     {
-        public int UnitId { get; set; } // Loja
-        public int VehicleId { get; set; } // VeÃ­culo
-        public int OwnerCustomerId { get; set; } // Cliente responsÃ¡vel
-
-        public DateTime EntryDate { get; set; } // Data de entrada
-        public DateTime? EstimatedDeliveryDate { get; set; } // PrevisÃ£o saÃ­da
-
-        public string? BodyworkDescription { get; set; } // Funilaria
+        public int UnitId { get; set; }
+        public int VehicleId { get; set; }
+        public int OwnerCustomerId { get; set; }
+        public DateTime EntryDate { get; set; }
+        public DateTime? EstimatedDeliveryDate { get; set; }
+        public string? BodyworkDescription { get; set; }
         public decimal BodyworkValue { get; set; }
-
-        public string? PaintDescription { get; set; } // Pintura
+        public string? PaintDescription { get; set; }
         public decimal PaintValue { get; set; }
-
-        public decimal TotalDiscount { get; set; } // Opcional
         public List<CreateServiceOrderPartItemRequest> Parts { get; set; } = [];
     }
 

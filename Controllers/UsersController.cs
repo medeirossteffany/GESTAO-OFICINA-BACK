@@ -37,6 +37,13 @@ namespace GestaoOficina.Controllers
                 Name = u.Name,
                 Email = u.Email,
                 PhoneNumber = u.PhoneNumber,
+                CpfCnpj = u.CpfCnpj,
+                AddressZip = u.AddressZip,
+                AddressStreet = u.AddressStreet,
+                AddressNumber = u.AddressNumber,
+                AddressDistrict = u.AddressDistrict,
+                AddressCity = u.AddressCity,
+                AddressState = u.AddressState,
                 Role = u.Role,
                 IsActive = u.IsActive,
                 FullAccess = u.FullAccess,
@@ -64,7 +71,7 @@ namespace GestaoOficina.Controllers
 
             var isAdmin = Enum.TryParse<UserRole>(dto.Role, true, out var role) && role == UserRole.Admin;
             if (isAdmin && dto.UnitIds != null && dto.UnitIds.Count > 0)
-                return BadRequest("UsuÃ¡rios admin sÃ£o atribuidos a todas as units automaticamente. NÃ£o Ã© possÃ­vel especificar unidades individuais.");
+                return BadRequest("Usuários admin são atribuidos a todas as units automaticamente. Não é possível especificar unidades individuais.");
 
             var user = await _service.CreateUserAsync(dto, tenantId);
             var response = new UserResponse
@@ -74,6 +81,13 @@ namespace GestaoOficina.Controllers
                 Name = user.Name,
                 Email = user.Email,
                 PhoneNumber = user.PhoneNumber,
+                CpfCnpj = user.CpfCnpj,
+                AddressZip = user.AddressZip,
+                AddressStreet = user.AddressStreet,
+                AddressNumber = user.AddressNumber,
+                AddressDistrict = user.AddressDistrict,
+                AddressCity = user.AddressCity,
+                AddressState = user.AddressState,
                 Role = user.Role,
                 IsActive = user.IsActive,
                 FullAccess = user.FullAccess,
@@ -105,7 +119,7 @@ namespace GestaoOficina.Controllers
             var roleToValidate = dto.Role ?? userToUpdate.Role.ToString();
             var isAdmin = Enum.TryParse<UserRole>(roleToValidate, true, out var role) && role == UserRole.Admin;
             if (isAdmin && dto.UnitIds != null && dto.UnitIds.Count > 0)
-                return BadRequest("UsuÃ¡rios admin sÃ£o atribuidos a todas as units automaticamente. NÃ£o Ã© possÃ­vel especificar unidades individuais.");
+                return BadRequest("Usuários admin são atribuidos a todas as units automaticamente. Não é possível especificar unidades individuais.");
 
             var updatedUser = await _service.UpdateUserAsync(id, dto);
             if (updatedUser == null)
@@ -118,6 +132,13 @@ namespace GestaoOficina.Controllers
                 Name = updatedUser.Name,
                 Email = updatedUser.Email,
                 PhoneNumber = updatedUser.PhoneNumber,
+                CpfCnpj = updatedUser.CpfCnpj,
+                AddressZip = updatedUser.AddressZip,
+                AddressStreet = updatedUser.AddressStreet,
+                AddressNumber = updatedUser.AddressNumber,
+                AddressDistrict = updatedUser.AddressDistrict,
+                AddressCity = updatedUser.AddressCity,
+                AddressState = updatedUser.AddressState,
                 Role = updatedUser.Role,
                 IsActive = updatedUser.IsActive,
                 FullAccess = updatedUser.FullAccess,

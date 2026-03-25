@@ -22,6 +22,7 @@ namespace GestaoOficina.Features.ServiceOrders
                 .Include(so => so.OwnerCustomer)
                 .Include(so => so.Status)
                 .Where(so => so.TenantId == tenantId)
+                .Where(so => so.IsActive)
                 .Where(so => fullAccess || unitIds.Contains(so.UnitId))
                 .OrderByDescending(so => so.CreatedAt)
                 .ToListAsync();
@@ -34,12 +35,13 @@ namespace GestaoOficina.Features.ServiceOrders
                 .Include(so => so.Vehicle)
                 .Include(so => so.OwnerCustomer)
                 .Include(so => so.Status)
-                .FirstOrDefaultAsync(so => so.Id == id);
+                .FirstOrDefaultAsync(so => so.Id == id && so.IsActive);
         }
 
         public bool HasAccess(ServiceOrder serviceOrder, int tenantId, List<int> unitIds, bool fullAccess)
         {
             if (serviceOrder.TenantId != tenantId) return false;
+            if (!serviceOrder.IsActive) return false;
             if (fullAccess) return true;
 
             return unitIds.Contains(serviceOrder.UnitId);
@@ -53,7 +55,7 @@ namespace GestaoOficina.Features.ServiceOrders
         {
             if (!fullAccess && !unitIds.Contains(dto.UnitId))
             {
-                throw new InvalidOperationException("UsuÃ¡rio sem acesso Ã  unidade informada.");
+                throw new InvalidOperationException("Usuário sem acesso à unidade informada.");
             }
 
             var unitExists = await _context.Units
@@ -61,15 +63,15 @@ namespace GestaoOficina.Features.ServiceOrders
 
             if (!unitExists)
             {
-                throw new InvalidOperationException("Unidade invÃ¡lida para o tenant informado.");
+                throw new InvalidOperationException("Unidade inválida para o tenant informado.");
             }
 
             var vehicle = await _context.Vehicles
-                .FirstOrDefaultAsync(v => v.Id == dto.VehicleId && v.TenantId == tenantId);
+                .FirstOrDefaultAsync(v => v.Id == dto.VehicleId && v.TenantId == tenantId && v.IsActive);
 
             if (vehicle == null)
             {
-                throw new InvalidOperationException("VeÃ­culo invÃ¡lido para o tenant informado.");
+                throw new InvalidOperationException("Veículo inválido para o tenant informado.");
             }
 
             var ownerCustomer = await _context.Customers
@@ -78,13 +80,13 @@ namespace GestaoOficina.Features.ServiceOrders
 
             if (ownerCustomer == null)
             {
-                throw new InvalidOperationException("Cliente responsÃ¡vel invÃ¡lido para o tenant informado.");
+                throw new InvalidOperationException("Cliente responsável inválido para o tenant informado.");
             }
 
             var customerLinkedToUnit = ownerCustomer.CustomerUnits.Any(cu => cu.UnitId == dto.UnitId);
             if (!customerLinkedToUnit)
             {
-                throw new InvalidOperationException("Cliente responsÃ¡vel nÃ£o estÃ¡ vinculado Ã  unidade informada.");
+                throw new InvalidOperationException("Cliente responsável não está vinculado à unidade informada.");
             }
 
             var initialStatus = await _context.ServiceOrderStatuses
@@ -92,12 +94,12 @@ namespace GestaoOficina.Features.ServiceOrders
 
             if (initialStatus == null)
             {
-                throw new InvalidOperationException("Status inicial ENVIADO nÃ£o encontrado.");
+                throw new InvalidOperationException("Status inicial ENVIADO não encontrado.");
             }
 
             var now = DateTime.UtcNow;
             var partsValue = dto.Parts?.Sum(p => p.Quantity * p.UnitPrice) ?? 0m;
-            var totalAmount = dto.BodyworkValue + dto.PaintValue + partsValue - dto.TotalDiscount;
+            var totalAmount = dto.BodyworkValue + dto.PaintValue + partsValue;
 
             if (totalAmount < 0)
             {
@@ -120,8 +122,8 @@ namespace GestaoOficina.Features.ServiceOrders
                 PaintDescription = dto.PaintDescription,
                 PaintValue = dto.PaintValue,
                 PartsValue = partsValue,
-                TotalDiscount = dto.TotalDiscount,
                 TotalAmount = totalAmount,
+                IsActive = true,
                 CreatedAt = now,
                 UpdatedAt = now
             };
@@ -150,7 +152,7 @@ namespace GestaoOficina.Features.ServiceOrders
                 TenantId = tenantId,
                 ServiceOrderId = serviceOrder.Id,
                 EventType = "CREATED",
-                Message = "Ordem de serviÃ§o criada com status ENVIADO.",
+                Message = "Ordem de serviço criada com status ENVIADO.",
                 OldStatusId = null,
                 NewStatusId = initialStatus.Id,
                 CreatedAt = now
@@ -170,7 +172,7 @@ namespace GestaoOficina.Features.ServiceOrders
             bool fullAccess)
         {
             var serviceOrder = await _context.ServiceOrders
-                .FirstOrDefaultAsync(so => so.Id == id && so.TenantId == tenantId);
+                .FirstOrDefaultAsync(so => so.Id == id && so.TenantId == tenantId && so.IsActive);
 
             if (serviceOrder == null) return null;
 
@@ -180,7 +182,7 @@ namespace GestaoOficina.Features.ServiceOrders
 
             if (!fullAccess && (!unitIds.Contains(serviceOrder.UnitId) || !unitIds.Contains(targetUnitId)))
             {
-                throw new InvalidOperationException("UsuÃ¡rio sem acesso Ã  unidade informada.");
+                throw new InvalidOperationException("Usuário sem acesso à unidade informada.");
             }
 
             var unitExists = await _context.Units
@@ -188,15 +190,15 @@ namespace GestaoOficina.Features.ServiceOrders
 
             if (!unitExists)
             {
-                throw new InvalidOperationException("Unidade invÃ¡lida para o tenant informado.");
+                throw new InvalidOperationException("Unidade inválida para o tenant informado.");
             }
 
             var vehicle = await _context.Vehicles
-                .FirstOrDefaultAsync(v => v.Id == targetVehicleId && v.TenantId == tenantId);
+                .FirstOrDefaultAsync(v => v.Id == targetVehicleId && v.TenantId == tenantId && v.IsActive);
 
             if (vehicle == null)
             {
-                throw new InvalidOperationException("VeÃ­culo invÃ¡lido para o tenant informado.");
+                throw new InvalidOperationException("Veículo inválido para o tenant informado.");
             }
 
             var ownerCustomer = await _context.Customers
@@ -205,13 +207,13 @@ namespace GestaoOficina.Features.ServiceOrders
 
             if (ownerCustomer == null)
             {
-                throw new InvalidOperationException("Cliente responsÃ¡vel invÃ¡lido para o tenant informado.");
+                throw new InvalidOperationException("Cliente responsável inválido para o tenant informado.");
             }
 
             var customerLinkedToUnit = ownerCustomer.CustomerUnits.Any(cu => cu.UnitId == targetUnitId);
             if (!customerLinkedToUnit)
             {
-                throw new InvalidOperationException("Cliente responsÃ¡vel nÃ£o estÃ¡ vinculado Ã  unidade informada.");
+                throw new InvalidOperationException("Cliente responsável não está vinculado à unidade informada.");
             }
 
             if (dto.StatusId.HasValue)
@@ -219,7 +221,7 @@ namespace GestaoOficina.Features.ServiceOrders
                 var statusExists = await _context.ServiceOrderStatuses.AnyAsync(s => s.Id == dto.StatusId.Value);
                 if (!statusExists)
                 {
-                    throw new InvalidOperationException("Status invÃ¡lido.");
+                    throw new InvalidOperationException("Status inválido.");
                 }
             }
 
@@ -233,10 +235,12 @@ namespace GestaoOficina.Features.ServiceOrders
 
             var bodyworkValue = dto.BodyworkValue ?? serviceOrder.BodyworkValue;
             var paintValue = dto.PaintValue ?? serviceOrder.PaintValue;
-            var totalDiscount = dto.TotalDiscount ?? serviceOrder.TotalDiscount;
+            var totalAmount = bodyworkValue + paintValue + partsValue;
 
-            var totalAmount = bodyworkValue + paintValue + partsValue - totalDiscount;
-            if (totalAmount < 0) totalAmount = 0;
+            if (totalAmount < 0)
+            {
+                totalAmount = 0;
+            }
 
             var oldStatusId = serviceOrder.StatusId;
             var statusChanged = dto.StatusId.HasValue && dto.StatusId.Value != oldStatusId;
@@ -254,7 +258,6 @@ namespace GestaoOficina.Features.ServiceOrders
             if (dto.PaintDescription is not null) serviceOrder.PaintDescription = dto.PaintDescription;
             serviceOrder.PaintValue = paintValue;
             serviceOrder.PartsValue = partsValue;
-            serviceOrder.TotalDiscount = totalDiscount;
             serviceOrder.TotalAmount = totalAmount;
             serviceOrder.UpdatedAt = now;
 
@@ -299,8 +302,8 @@ namespace GestaoOficina.Features.ServiceOrders
                 ServiceOrderId = serviceOrder.Id,
                 EventType = statusChanged ? "STATUS_CHANGED" : "UPDATED",
                 Message = statusChanged
-                    ? "Status da ordem de serviÃ§o atualizado."
-                    : "Ordem de serviÃ§o atualizada.",
+                    ? "Status da ordem de serviço atualizado."
+                    : "Ordem de serviço atualizada.",
                 OldStatusId = statusChanged ? oldStatusId : null,
                 NewStatusId = statusChanged ? serviceOrder.StatusId : null,
                 CreatedAt = now
@@ -309,7 +312,7 @@ namespace GestaoOficina.Features.ServiceOrders
             await _context.SaveChangesAsync();
             await transaction.CommitAsync();
 
-            return await GetServiceOrderById(serviceOrder.Id);
+            return await GetServiceOrderById(serviceOrder.Id) ?? serviceOrder;
         }
 
         public async Task<bool> DeleteServiceOrder(
@@ -325,7 +328,7 @@ namespace GestaoOficina.Features.ServiceOrders
 
             if (!fullAccess && !unitIds.Contains(serviceOrder.UnitId))
             {
-                throw new InvalidOperationException("UsuÃ¡rio sem acesso Ã  unidade informada.");
+                throw new InvalidOperationException("Usuário sem acesso à unidade informada.");
             }
 
             await using var transaction = await _context.Database.BeginTransactionAsync();

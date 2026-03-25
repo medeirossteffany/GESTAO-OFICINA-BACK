@@ -60,7 +60,7 @@ namespace GestaoOficina.Controllers
             var jwtKey = Environment.GetEnvironmentVariable("JWT_KEY") ?? _config["Jwt:Key"];
             if (string.IsNullOrWhiteSpace(jwtKey) || Encoding.UTF8.GetByteCount(jwtKey) < 32)
             {
-                return StatusCode(500, "ConfiguraÃ§Ã£o JWT invÃ¡lida: JWT_KEY deve ter no mÃ­nimo 32 caracteres.");
+                return StatusCode(500, "Configuração JWT inválida: JWT_KEY deve ter no mínimo 32 caracteres.");
             }
 
             var jwtIssuer = Environment.GetEnvironmentVariable("JWT_ISSUER") ?? _config["Jwt:Issuer"] ?? "GestaoOficina";

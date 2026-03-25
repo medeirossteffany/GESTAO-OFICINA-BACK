@@ -12,6 +12,7 @@ namespace GestaoOficina.Data.Configurations
             builder.Property(v => v.Plate).IsRequired();
             builder.Property(v => v.Brand).IsRequired();
             builder.Property(v => v.Model).IsRequired();
+            builder.Property(v => v.IsActive).IsRequired().HasDefaultValue(true);
             builder.Property(v => v.CreatedAt).IsRequired();
             builder.HasIndex(v => new { v.TenantId, v.Plate }).IsUnique();
             builder.HasOne(v => v.Tenant)

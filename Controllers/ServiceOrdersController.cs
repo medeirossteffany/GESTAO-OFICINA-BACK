@@ -126,7 +126,6 @@ namespace GestaoOficina.Controllers
                 so.PaintDescription,
                 so.PaintValue,
                 so.PartsValue,
-                so.TotalDiscount,
                 so.TotalAmount,
                 so.CreatedAt,
                 so.UpdatedAt

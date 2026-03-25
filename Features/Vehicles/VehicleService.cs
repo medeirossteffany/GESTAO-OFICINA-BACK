@@ -18,6 +18,7 @@ namespace GestaoOficina.Features.Vehicles
         {
             return await _context.Vehicles
                 .Where(v => v.TenantId == tenantId)
+                .Where(v => v.IsActive)
                 .Where(v => v.Customer.IsActive)
                 .Where(v => fullAccess || v.Customer.CustomerUnits.Any(cu => unitIds.Contains(cu.UnitId)))
                 .Include(v => v.Customer)
@@ -31,7 +32,7 @@ namespace GestaoOficina.Features.Vehicles
             return await _context.Vehicles
                 .Include(v => v.Customer)
                     .ThenInclude(c => c.CustomerUnits)
-                .FirstOrDefaultAsync(v => v.Id == id);
+                .FirstOrDefaultAsync(v => v.Id == id && v.IsActive);
         }
 
         public async Task<Customer?> GetCustomerById(int customerId, int tenantId)
@@ -46,15 +47,15 @@ namespace GestaoOficina.Features.Vehicles
             var customer = await GetCustomerById(dto.CustomerId, tenantId);
             if (customer == null)
             {
-                throw new InvalidOperationException("Cliente invÃ¡lido para o tenant informado.");
+                throw new InvalidOperationException("Cliente inválido para o tenant informado.");
             }
 
             var duplicatePlate = await _context.Vehicles
-                .AnyAsync(v => v.TenantId == tenantId && v.Plate == dto.Plate);
+                .AnyAsync(v => v.TenantId == tenantId && v.Plate == dto.Plate && v.IsActive);
 
             if (duplicatePlate)
             {
-                throw new InvalidOperationException($"A placa {dto.Plate} jÃ¡ estÃ¡ cadastrada para este tenant.");
+                throw new InvalidOperationException($"A placa {dto.Plate} já está cadastrada para este tenant.");
             }
 
             var vehicle = new Vehicle
@@ -70,6 +71,7 @@ namespace GestaoOficina.Features.Vehicles
                 Renavam = dto.Renavam,
                 InsuranceClaimNumber = dto.InsuranceClaimNumber,
                 Notes = dto.Notes,
+                IsActive = true,
                 CreatedAt = DateTime.UtcNow
             };
 
@@ -84,7 +86,7 @@ namespace GestaoOficina.Features.Vehicles
             var vehicle = await _context.Vehicles
                 .Include(v => v.Customer)
                     .ThenInclude(c => c.CustomerUnits)
-                .FirstOrDefaultAsync(v => v.Id == id && v.TenantId == tenantId);
+                .FirstOrDefaultAsync(v => v.Id == id && v.TenantId == tenantId && v.IsActive);
 
             if (vehicle == null) return null;
 
@@ -92,18 +94,18 @@ namespace GestaoOficina.Features.Vehicles
             var customer = await GetCustomerById(targetCustomerId, tenantId);
             if (customer == null)
             {
-                throw new InvalidOperationException("Cliente invÃ¡lido para o tenant informado.");
+                throw new InvalidOperationException("Cliente inválido para o tenant informado.");
             }
 
             var targetPlate = dto.Plate ?? vehicle.Plate;
             if (!string.Equals(vehicle.Plate, targetPlate, StringComparison.OrdinalIgnoreCase))
             {
                 var duplicatePlate = await _context.Vehicles
-                    .AnyAsync(v => v.Id != id && v.TenantId == tenantId && v.Plate == targetPlate);
+                    .AnyAsync(v => v.Id != id && v.TenantId == tenantId && v.Plate == targetPlate && v.IsActive);
 
                 if (duplicatePlate)
                 {
-                    throw new InvalidOperationException($"A placa {targetPlate} jÃ¡ estÃ¡ cadastrada para este tenant.");
+                    throw new InvalidOperationException($"A placa {targetPlate} já está cadastrada para este tenant.");
                 }
             }
 
@@ -137,6 +139,7 @@ namespace GestaoOficina.Features.Vehicles
         public bool HasAccessToVehicle(Vehicle vehicle, int tenantId, List<int> unitIds, bool fullAccess)
         {
             if (vehicle.TenantId != tenantId) return false;
+            if (!vehicle.IsActive) return false;
             if (!vehicle.Customer.IsActive) return false;
             if (fullAccess) return true;
 

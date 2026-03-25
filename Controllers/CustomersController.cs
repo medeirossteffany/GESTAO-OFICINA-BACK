@@ -107,7 +107,7 @@ namespace GestaoOficina.Controllers
                 {
                     if (!int.TryParse(part, out var parsed))
                     {
-                        return BadRequest("ParÃ¢metro unitIds invÃ¡lido.");
+                        return BadRequest("Parametro unitIds inválido.");
                     }
 
                     targetUnitIds.Add(parsed);
@@ -117,7 +117,7 @@ namespace GestaoOficina.Controllers
             targetUnitIds = targetUnitIds.Distinct().ToList();
             if (targetUnitIds.Count == 0)
             {
-                return BadRequest("Informe ao menos um unitId/unitIds para remoÃ§Ã£o.");
+                return BadRequest("Informe ao menos um unitId/unitIds para remoção.");
             }
 
             if (!fullAccess && targetUnitIds.Any(idToRemove => !allowedUnitIds.Contains(idToRemove))) return Forbid();

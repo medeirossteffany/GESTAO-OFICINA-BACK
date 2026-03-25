@@ -13,8 +13,8 @@ namespace GestaoOficina.Data.Configurations
             builder.Property(so => so.BodyworkValue).HasDefaultValue(0);
             builder.Property(so => so.PaintValue).HasDefaultValue(0);
             builder.Property(so => so.PartsValue).HasDefaultValue(0);
-            builder.Property(so => so.TotalDiscount).HasDefaultValue(0);
             builder.Property(so => so.TotalAmount).IsRequired();
+            builder.Property(so => so.IsActive).IsRequired().HasDefaultValue(true);
             builder.Property(so => so.CreatedAt).IsRequired();
             builder.Property(so => so.UpdatedAt).IsRequired();
             builder.HasOne(so => so.Tenant)

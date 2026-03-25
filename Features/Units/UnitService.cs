@@ -22,7 +22,7 @@ namespace GestaoOficina.Features.Units
                 
                 if (unitInOtherTenant != null)
                 {
-                    throw new InvalidOperationException($"O CNPJ {dto.Cnpj} jÃ¡ estÃ¡ sendo utilizado por outra Unit de outro Tenant.");
+                    throw new InvalidOperationException($"O CNPJ {dto.Cnpj} já está sendo utilizado por outra Unit de outro Tenant.");
                 }
             }
 
@@ -68,7 +68,7 @@ namespace GestaoOficina.Features.Units
                 
                 if (unitInOtherTenant != null)
                 {
-                    throw new InvalidOperationException($"O CNPJ {dto.Cnpj} jÃ¡ estÃ¡ sendo utilizado por outra Unit de outro Tenant.");
+                    throw new InvalidOperationException($"O CNPJ {dto.Cnpj} já está sendo utilizado por outra Unit de outro Tenant.");
                 }
             }
 

@@ -38,7 +38,7 @@ namespace GestaoOficina.Features.Customers
 
             if (!legalTypeExists)
             {
-                throw new InvalidOperationException("Tipo legal do cliente invÃ¡lido.");
+                throw new InvalidOperationException("Tipo legal do cliente inválido.");
             }
 
             var unitExistsInTenant = await _context.Units
@@ -46,7 +46,7 @@ namespace GestaoOficina.Features.Customers
 
             if (!unitExistsInTenant)
             {
-                throw new InvalidOperationException("Loja invÃ¡lida para o tenant informado.");
+                throw new InvalidOperationException("Loja inválida para o tenant informado.");
             }
 
             if (!string.IsNullOrWhiteSpace(dto.CpfCnpj))
@@ -125,7 +125,7 @@ namespace GestaoOficina.Features.Customers
 
                 if (!legalTypeExists)
                 {
-                    throw new InvalidOperationException("Tipo legal do cliente invÃ¡lido.");
+                    throw new InvalidOperationException("Tipo legal do cliente inválido.");
                 }
 
                 customer.LegalTypeId = dto.LegalTypeId.Value;
@@ -170,6 +170,35 @@ namespace GestaoOficina.Features.Customers
             {
                 customer.IsActive = false;
                 _context.Customers.Update(customer);
+
+                var vehicles = await _context.Vehicles
+                    .Where(v => v.CustomerId == id && v.IsActive)
+                    .ToListAsync();
+
+                foreach (var vehicle in vehicles)
+                {
+                    vehicle.IsActive = false;
+                }
+
+                var serviceOrders = await _context.ServiceOrders
+                    .Where(so => so.IsActive && (so.OwnerCustomerId == id || so.Vehicle.CustomerId == id))
+                    .ToListAsync();
+
+                foreach (var serviceOrder in serviceOrders)
+                {
+                    serviceOrder.IsActive = false;
+                }
+
+                if (vehicles.Count > 0)
+                {
+                    _context.Vehicles.UpdateRange(vehicles);
+                }
+
+                if (serviceOrders.Count > 0)
+                {
+                    _context.ServiceOrders.UpdateRange(serviceOrders);
+                }
+
                 await _context.SaveChangesAsync();
             }
 

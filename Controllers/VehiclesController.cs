@@ -55,7 +55,7 @@ namespace GestaoOficina.Controllers
             var unitIds = User.FindAll("UnitId").Select(c => int.Parse(c.Value)).ToList();
 
             var customer = await _service.GetCustomerById(dto.CustomerId, loggedTenantId);
-            if (customer == null) return BadRequest("Cliente invÃ¡lido para o tenant informado.");
+            if (customer == null) return BadRequest("Cliente inválido para o tenant informado.");
 
             var hasAccessToCustomer = _service.HasAccessToCustomer(customer, loggedTenantId, unitIds, fullAccess);
             if (!hasAccessToCustomer) return Forbid();
@@ -81,7 +81,7 @@ namespace GestaoOficina.Controllers
             if (dto.CustomerId.HasValue)
             {
                 var targetCustomer = await _service.GetCustomerById(dto.CustomerId.Value, loggedTenantId);
-                if (targetCustomer == null) return BadRequest("Cliente invÃ¡lido para o tenant informado.");
+                if (targetCustomer == null) return BadRequest("Cliente inválido para o tenant informado.");
 
                 var hasAccessToTargetCustomer = _service.HasAccessToCustomer(targetCustomer, loggedTenantId, unitIds, fullAccess);
                 if (!hasAccessToTargetCustomer) return Forbid();

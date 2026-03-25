@@ -16,6 +16,7 @@ namespace GestaoOficina.Entities
         public string? Renavam { get; set; }
         public string? InsuranceClaimNumber { get; set; }
         public string? Notes { get; set; }
+        public bool IsActive { get; set; }
         public DateTime CreatedAt { get; set; }
 
         public Tenant Tenant { get; set; }

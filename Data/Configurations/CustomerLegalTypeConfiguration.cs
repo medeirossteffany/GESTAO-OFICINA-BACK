@@ -14,7 +14,7 @@ namespace GestaoOficina.Data.Configurations
             builder.HasIndex(clt => clt.Code).IsUnique();
 
             builder.HasData(
-                new CustomerLegalType { Id = 1, Code = "PF", Name = "Cliente FÃ­sico" },
+                new CustomerLegalType { Id = 1, Code = "PF", Name = "Cliente Físico" },
                 new CustomerLegalType { Id = 2, Code = "PJ", Name = "Cliente Empresa" }
             );
         }

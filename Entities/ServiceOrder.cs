@@ -18,8 +18,8 @@ namespace GestaoOficina.Entities
         public string? PaintDescription { get; set; }
         public decimal PaintValue { get; set; }
         public decimal PartsValue { get; set; }
-        public decimal TotalDiscount { get; set; }
         public decimal TotalAmount { get; set; }
+        public bool IsActive { get; set; }
         public DateTime CreatedAt { get; set; }
         public DateTime UpdatedAt { get; set; }
 
