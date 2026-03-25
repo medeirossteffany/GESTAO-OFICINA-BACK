@@ -11,7 +11,9 @@ namespace GestaoOficina.Entities
         public decimal Quantity { get; set; }
         public decimal UnitPrice { get; set; }
         public decimal TotalPrice { get; set; }
+        public bool IsActive { get; set; }
         public DateTime CreatedAt { get; set; }
+
         public Tenant Tenant { get; set; }
         public ServiceOrder ServiceOrder { get; set; }
     }

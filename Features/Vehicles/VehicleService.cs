@@ -20,9 +20,9 @@ namespace GestaoOficina.Features.Vehicles
                 .Where(v => v.TenantId == tenantId)
                 .Where(v => v.IsActive)
                 .Where(v => v.Customer.IsActive)
-                .Where(v => fullAccess || v.Customer.CustomerUnits.Any(cu => unitIds.Contains(cu.UnitId)))
+                .Where(v => fullAccess || v.Customer.CustomerUnits.Any(cu => cu.IsActive && unitIds.Contains(cu.UnitId)))
                 .Include(v => v.Customer)
-                    .ThenInclude(c => c.CustomerUnits)
+                    .ThenInclude(c => c.CustomerUnits.Where(cu => cu.IsActive))
                 .OrderBy(v => v.Plate)
                 .ToListAsync();
         }
@@ -31,14 +31,14 @@ namespace GestaoOficina.Features.Vehicles
         {
             return await _context.Vehicles
                 .Include(v => v.Customer)
-                    .ThenInclude(c => c.CustomerUnits)
+                    .ThenInclude(c => c.CustomerUnits.Where(cu => cu.IsActive))
                 .FirstOrDefaultAsync(v => v.Id == id && v.IsActive);
         }
 
         public async Task<Customer?> GetCustomerById(int customerId, int tenantId)
         {
             return await _context.Customers
-                .Include(c => c.CustomerUnits)
+                .Include(c => c.CustomerUnits.Where(cu => cu.IsActive))
                 .FirstOrDefaultAsync(c => c.Id == customerId && c.TenantId == tenantId && c.IsActive);
         }
 
@@ -128,10 +128,47 @@ namespace GestaoOficina.Features.Vehicles
 
         public async Task<bool> DeleteVehicle(int id)
         {
-            var vehicle = await _context.Vehicles.FindAsync(id);
+            var vehicle = await _context.Vehicles
+                .FirstOrDefaultAsync(v => v.Id == id && v.IsActive);
+
             if (vehicle == null) return false;
 
-            _context.Vehicles.Remove(vehicle);
+            vehicle.IsActive = false;
+
+            var serviceOrders = await _context.ServiceOrders
+                .Where(so => so.VehicleId == id && so.IsActive)
+                .ToListAsync();
+
+            foreach (var serviceOrder in serviceOrders)
+            {
+                serviceOrder.IsActive = false;
+            }
+
+            var serviceOrderIds = serviceOrders.Select(so => so.Id).ToList();
+
+            var parts = await _context.ServiceOrderParts
+                .Where(p => serviceOrderIds.Contains(p.ServiceOrderId) && p.IsActive)
+                .ToListAsync();
+
+            foreach (var part in parts)
+            {
+                part.IsActive = false;
+            }
+
+            var timelines = await _context.ServiceOrderTimelines
+                .Where(t => serviceOrderIds.Contains(t.ServiceOrderId) && t.IsActive)
+                .ToListAsync();
+
+            foreach (var timeline in timelines)
+            {
+                timeline.IsActive = false;
+            }
+
+            _context.Vehicles.Update(vehicle);
+            if (serviceOrders.Count > 0) _context.ServiceOrders.UpdateRange(serviceOrders);
+            if (parts.Count > 0) _context.ServiceOrderParts.UpdateRange(parts);
+            if (timelines.Count > 0) _context.ServiceOrderTimelines.UpdateRange(timelines);
+
             await _context.SaveChangesAsync();
             return true;
         }
@@ -143,7 +180,7 @@ namespace GestaoOficina.Features.Vehicles
             if (!vehicle.Customer.IsActive) return false;
             if (fullAccess) return true;
 
-            return vehicle.Customer.CustomerUnits.Any(cu => unitIds.Contains(cu.UnitId));
+            return vehicle.Customer.CustomerUnits.Any(cu => cu.IsActive && unitIds.Contains(cu.UnitId));
         }
 
         public bool HasAccessToCustomer(Customer customer, int tenantId, List<int> unitIds, bool fullAccess)
@@ -151,7 +188,7 @@ namespace GestaoOficina.Features.Vehicles
             if (customer.TenantId != tenantId || !customer.IsActive) return false;
             if (fullAccess) return true;
 
-            return customer.CustomerUnits.Any(cu => unitIds.Contains(cu.UnitId));
+            return customer.CustomerUnits.Any(cu => cu.IsActive && unitIds.Contains(cu.UnitId));
         }
     }
 }

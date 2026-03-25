@@ -13,6 +13,7 @@ namespace GestaoOficina.Data.Configurations
             builder.Property(sop => sop.Quantity).IsRequired();
             builder.Property(sop => sop.UnitPrice).IsRequired();
             builder.Property(sop => sop.TotalPrice).IsRequired();
+            builder.Property(sop => sop.IsActive).IsRequired().HasDefaultValue(true);
             builder.Property(sop => sop.CreatedAt).IsRequired();
             builder.HasOne(sop => sop.Tenant)
                 .WithMany(t => t.ServiceOrderParts)

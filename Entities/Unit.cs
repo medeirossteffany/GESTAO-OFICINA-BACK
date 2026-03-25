@@ -15,6 +15,7 @@ namespace GestaoOficina.Entities
         public string AddressDistrict { get; set; }
         public string AddressCity { get; set; }
         public string AddressState { get; set; }
+        public bool IsActive { get; set; }
         public DateTime CreatedAt { get; set; }
 
         public Tenant Tenant { get; set; }

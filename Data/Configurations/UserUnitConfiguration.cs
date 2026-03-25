@@ -9,6 +9,7 @@ namespace GestaoOficina.Data.Configurations
         public void Configure(EntityTypeBuilder<UserUnit> builder)
         {
             builder.HasKey(uu => uu.Id);
+            builder.Property(uu => uu.IsActive).IsRequired().HasDefaultValue(true);
             builder.HasOne(uu => uu.User)
                 .WithMany(u => u.UserUnits)
                 .HasForeignKey(uu => uu.UserId);

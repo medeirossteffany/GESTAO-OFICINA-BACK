@@ -16,6 +16,7 @@ namespace GestaoOficina.Data.Configurations
             builder.Property(u => u.AddressDistrict).IsRequired();
             builder.Property(u => u.AddressCity).IsRequired();
             builder.Property(u => u.AddressState).IsRequired();
+            builder.Property(u => u.IsActive).IsRequired().HasDefaultValue(true);
             builder.Property(u => u.CreatedAt).IsRequired();
             builder.HasIndex(u => new { u.TenantId, u.Cnpj }).IsUnique().HasFilter("[Cnpj] IS NOT NULL");
             builder.HasOne(u => u.Tenant)

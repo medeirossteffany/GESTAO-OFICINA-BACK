@@ -32,13 +32,13 @@ namespace GestaoOficina.Controllers
         public async Task<IActionResult> Login([FromBody] LoginRequest dto)
         {
             var user = await _userManager.FindByEmailAsync(dto.Email);
-            if (user == null) return Unauthorized();
+            if (user == null || !user.IsActive) return Unauthorized();
 
             var result = await _signInManager.CheckPasswordSignInAsync(user, dto.Password, false);
             if (!result.Succeeded) return Unauthorized();
 
             var userUnits = await _context.UserUnits
-                .Where(uu => uu.UserId == user.Id)
+                .Where(uu => uu.UserId == user.Id && uu.IsActive && uu.Unit.IsActive)
                 .Select(uu => uu.UnitId.ToString())
                 .ToListAsync();
 

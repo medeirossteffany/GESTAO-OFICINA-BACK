@@ -11,6 +11,7 @@ namespace GestaoOficina.Data.Configurations
             builder.HasKey(sot => sot.Id);
             builder.Property(sot => sot.EventType).IsRequired();
             builder.Property(sot => sot.Message).IsRequired();
+            builder.Property(sot => sot.IsActive).IsRequired().HasDefaultValue(true);
             builder.Property(sot => sot.CreatedAt).IsRequired();
             builder.HasOne(sot => sot.Tenant)
                 .WithMany(t => t.ServiceOrderTimelines)
@@ -21,6 +22,7 @@ namespace GestaoOficina.Data.Configurations
             builder.HasOne(sot => sot.User)
                 .WithMany()
                 .HasForeignKey(sot => sot.UserId)
+                .OnDelete(DeleteBehavior.SetNull)
                 .IsRequired(false);
             builder.HasOne(sot => sot.OldStatus)
                 .WithMany()

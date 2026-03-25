@@ -59,7 +59,7 @@ namespace GestaoOficina.Features.ServiceOrders
             }
 
             var unitExists = await _context.Units
-                .AnyAsync(u => u.Id == dto.UnitId && u.TenantId == tenantId);
+                .AnyAsync(u => u.Id == dto.UnitId && u.TenantId == tenantId && u.IsActive);
 
             if (!unitExists)
             {
@@ -83,7 +83,7 @@ namespace GestaoOficina.Features.ServiceOrders
                 throw new InvalidOperationException("Cliente responsável inválido para o tenant informado.");
             }
 
-            var customerLinkedToUnit = ownerCustomer.CustomerUnits.Any(cu => cu.UnitId == dto.UnitId);
+            var customerLinkedToUnit = ownerCustomer.CustomerUnits.Any(cu => cu.IsActive && cu.UnitId == dto.UnitId);
             if (!customerLinkedToUnit)
             {
                 throw new InvalidOperationException("Cliente responsável não está vinculado à unidade informada.");
@@ -141,6 +141,7 @@ namespace GestaoOficina.Features.ServiceOrders
                     Quantity = p.Quantity,
                     UnitPrice = p.UnitPrice,
                     TotalPrice = p.Quantity * p.UnitPrice,
+                    IsActive = true,
                     CreatedAt = now
                 }).ToList();
 
@@ -155,6 +156,7 @@ namespace GestaoOficina.Features.ServiceOrders
                 Message = "Ordem de serviço criada com status ENVIADO.",
                 OldStatusId = null,
                 NewStatusId = initialStatus.Id,
+                IsActive = true,
                 CreatedAt = now
             });
 
@@ -186,7 +188,7 @@ namespace GestaoOficina.Features.ServiceOrders
             }
 
             var unitExists = await _context.Units
-                .AnyAsync(u => u.Id == targetUnitId && u.TenantId == tenantId);
+                .AnyAsync(u => u.Id == targetUnitId && u.TenantId == tenantId && u.IsActive);
 
             if (!unitExists)
             {
@@ -271,12 +273,17 @@ namespace GestaoOficina.Features.ServiceOrders
             if (dto.Parts is not null)
             {
                 var existingParts = await _context.ServiceOrderParts
-                    .Where(p => p.ServiceOrderId == serviceOrder.Id)
+                    .Where(p => p.ServiceOrderId == serviceOrder.Id && p.IsActive)
                     .ToListAsync();
+
+                foreach (var existingPart in existingParts)
+                {
+                    existingPart.IsActive = false;
+                }
 
                 if (existingParts.Count > 0)
                 {
-                    _context.ServiceOrderParts.RemoveRange(existingParts);
+                    _context.ServiceOrderParts.UpdateRange(existingParts);
                 }
 
                 if (dto.Parts.Count > 0)
@@ -289,6 +296,7 @@ namespace GestaoOficina.Features.ServiceOrders
                         Quantity = p.Quantity,
                         UnitPrice = p.UnitPrice,
                         TotalPrice = p.Quantity * p.UnitPrice,
+                        IsActive = true,
                         CreatedAt = now
                     }).ToList();
 
@@ -306,6 +314,7 @@ namespace GestaoOficina.Features.ServiceOrders
                     : "Ordem de serviço atualizada.",
                 OldStatusId = statusChanged ? oldStatusId : null,
                 NewStatusId = statusChanged ? serviceOrder.StatusId : null,
+                IsActive = true,
                 CreatedAt = now
             });
 
@@ -322,7 +331,7 @@ namespace GestaoOficina.Features.ServiceOrders
             bool fullAccess)
         {
             var serviceOrder = await _context.ServiceOrders
-                .FirstOrDefaultAsync(so => so.Id == id && so.TenantId == tenantId);
+                .FirstOrDefaultAsync(so => so.Id == id && so.TenantId == tenantId && so.IsActive);
 
             if (serviceOrder == null) return false;
 
@@ -331,31 +340,32 @@ namespace GestaoOficina.Features.ServiceOrders
                 throw new InvalidOperationException("Usuário sem acesso à unidade informada.");
             }
 
-            await using var transaction = await _context.Database.BeginTransactionAsync();
+            serviceOrder.IsActive = false;
+            serviceOrder.UpdatedAt = DateTime.UtcNow;
 
             var parts = await _context.ServiceOrderParts
-                .Where(p => p.ServiceOrderId == serviceOrder.Id)
+                .Where(p => p.ServiceOrderId == serviceOrder.Id && p.IsActive)
                 .ToListAsync();
 
-            if (parts.Count > 0)
+            foreach (var part in parts)
             {
-                _context.ServiceOrderParts.RemoveRange(parts);
+                part.IsActive = false;
             }
 
             var timelines = await _context.ServiceOrderTimelines
-                .Where(t => t.ServiceOrderId == serviceOrder.Id)
+                .Where(t => t.ServiceOrderId == serviceOrder.Id && t.IsActive)
                 .ToListAsync();
 
-            if (timelines.Count > 0)
+            foreach (var timeline in timelines)
             {
-                _context.ServiceOrderTimelines.RemoveRange(timelines);
+                timeline.IsActive = false;
             }
 
-            _context.ServiceOrders.Remove(serviceOrder);
+            _context.ServiceOrders.Update(serviceOrder);
+            if (parts.Count > 0) _context.ServiceOrderParts.UpdateRange(parts);
+            if (timelines.Count > 0) _context.ServiceOrderTimelines.UpdateRange(timelines);
 
             await _context.SaveChangesAsync();
-            await transaction.CommitAsync();
-
             return true;
         }
     }

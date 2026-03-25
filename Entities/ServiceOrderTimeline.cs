@@ -12,6 +12,7 @@ namespace GestaoOficina.Entities
         public string Message { get; set; }
         public int? OldStatusId { get; set; }
         public int? NewStatusId { get; set; }
+        public bool IsActive { get; set; }
         public DateTime CreatedAt { get; set; }
 
         public Tenant Tenant { get; set; }

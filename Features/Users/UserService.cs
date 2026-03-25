@@ -69,7 +69,7 @@ namespace GestaoOficina.Features.Users
             if (parsedRole == UserRole.Admin)
             {
                 var tenantUnits = await _context.Units
-                    .Where(u => u.TenantId == tenantId)
+                    .Where(u => u.TenantId == tenantId && u.IsActive)
                     .ToListAsync();
 
                 foreach (var unit in tenantUnits)
@@ -77,7 +77,8 @@ namespace GestaoOficina.Features.Users
                     var userUnit = new UserUnit
                     {
                         UserId = user.Id,
-                        UnitId = unit.Id
+                        UnitId = unit.Id,
+                        IsActive = true
                     };
                     _context.UserUnits.Add(userUnit);
                 }
@@ -89,7 +90,8 @@ namespace GestaoOficina.Features.Users
                     var userUnit = new UserUnit
                     {
                         UserId = user.Id,
-                        UnitId = unitId
+                        UnitId = unitId,
+                        IsActive = true
                     };
                     _context.UserUnits.Add(userUnit);
                 }
@@ -101,26 +103,28 @@ namespace GestaoOficina.Features.Users
 
         public async Task<User?> GetUserByIdAsync(int id)
         {
-            return await _context.Users.FindAsync(id);
+            return await _context.Users
+                .Include(u => u.UserUnits.Where(uu => uu.IsActive))
+                .FirstOrDefaultAsync(u => u.Id == id && u.IsActive);
         }
 
         public async Task<List<User>> GetTenantUsersAsync(int tenantId)
         {
             return await _context.Users
-                .Where(u => u.TenantId == tenantId)
-                .Include(u => u.UserUnits)
+                .Where(u => u.TenantId == tenantId && u.IsActive)
+                .Include(u => u.UserUnits.Where(uu => uu.IsActive))
                 .ToListAsync();
         }
 
         public async Task<User?> UpdateUserProfileAsync(int userId, UpdateUserProfileRequest dto)
         {
-            var user = await _context.Users.FindAsync(userId);
+            var user = await _context.Users.FirstOrDefaultAsync(u => u.Id == userId && u.IsActive);
             if (user == null) return null;
 
             if (!string.IsNullOrWhiteSpace(dto.PhoneNumber) && user.PhoneNumber != dto.PhoneNumber)
             {
                 var existingUserByPhone = await _context.Users
-                    .FirstOrDefaultAsync(u => u.Id != userId && u.PhoneNumber == dto.PhoneNumber);
+                    .FirstOrDefaultAsync(u => u.Id != userId && u.PhoneNumber == dto.PhoneNumber && u.IsActive);
 
                 if (existingUserByPhone != null)
                 {
@@ -146,8 +150,8 @@ namespace GestaoOficina.Features.Users
         public async Task<User?> UpdateUserAsync(int userId, UpdateUserRequest dto)
         {
             var user = await _context.Users
-                .Include(u => u.UserUnits)
-                .FirstOrDefaultAsync(u => u.Id == userId);
+                .Include(u => u.UserUnits.Where(uu => uu.IsActive))
+                .FirstOrDefaultAsync(u => u.Id == userId && u.IsActive);
 
             if (user == null) return null;
 
@@ -155,7 +159,7 @@ namespace GestaoOficina.Features.Users
             if (user.Email != targetEmail)
             {
                 var existingUserByEmail = await _context.Users
-                    .FirstOrDefaultAsync(u => u.Id != userId && u.Email == targetEmail);
+                    .FirstOrDefaultAsync(u => u.Id != userId && u.Email == targetEmail && u.IsActive);
 
                 if (existingUserByEmail != null)
                 {
@@ -166,7 +170,7 @@ namespace GestaoOficina.Features.Users
             if (!string.IsNullOrWhiteSpace(dto.PhoneNumber) && user.PhoneNumber != dto.PhoneNumber)
             {
                 var existingUserByPhone = await _context.Users
-                    .FirstOrDefaultAsync(u => u.Id != userId && u.PhoneNumber == dto.PhoneNumber);
+                    .FirstOrDefaultAsync(u => u.Id != userId && u.PhoneNumber == dto.PhoneNumber && u.IsActive);
 
                 if (existingUserByPhone != null)
                 {
@@ -198,13 +202,18 @@ namespace GestaoOficina.Features.Users
             var shouldUpdateUnits = !string.IsNullOrWhiteSpace(dto.Role) || dto.UnitIds is not null;
             if (shouldUpdateUnits)
             {
-                var existingUnits = user.UserUnits.ToList();
-                _context.UserUnits.RemoveRange(existingUnits);
+                var existingUnits = user.UserUnits.Where(uu => uu.IsActive).ToList();
+                foreach (var existingUnit in existingUnits)
+                {
+                    existingUnit.IsActive = false;
+                }
+
+                _context.UserUnits.UpdateRange(existingUnits);
 
                 if (parsedRole == UserRole.Admin)
                 {
                     var tenantUnits = await _context.Units
-                        .Where(u => u.TenantId == user.TenantId)
+                        .Where(u => u.TenantId == user.TenantId && u.IsActive)
                         .ToListAsync();
 
                     foreach (var unit in tenantUnits)
@@ -212,7 +221,8 @@ namespace GestaoOficina.Features.Users
                         _context.UserUnits.Add(new UserUnit
                         {
                             UserId = user.Id,
-                            UnitId = unit.Id
+                            UnitId = unit.Id,
+                            IsActive = true
                         });
                     }
                 }
@@ -223,7 +233,8 @@ namespace GestaoOficina.Features.Users
                         _context.UserUnits.Add(new UserUnit
                         {
                             UserId = user.Id,
-                            UnitId = unitId
+                            UnitId = unitId,
+                            IsActive = true
                         });
                     }
                 }
@@ -231,15 +242,31 @@ namespace GestaoOficina.Features.Users
 
             _context.Users.Update(user);
             await _context.SaveChangesAsync();
-            return user;
+            return await GetUserByIdAsync(user.Id);
         }
 
         public async Task<bool> DeleteUserAsync(int userId)
         {
-            var user = await _context.Users.FindAsync(userId);
+            var user = await _context.Users
+                .Include(u => u.UserUnits)
+                .FirstOrDefaultAsync(u => u.Id == userId && u.IsActive);
+
             if (user == null) return false;
 
-            _context.Users.Remove(user);
+            user.IsActive = false;
+
+            var activeUserUnits = user.UserUnits.Where(uu => uu.IsActive).ToList();
+            foreach (var userUnit in activeUserUnits)
+            {
+                userUnit.IsActive = false;
+            }
+
+            _context.Users.Update(user);
+            if (activeUserUnits.Count > 0)
+            {
+                _context.UserUnits.UpdateRange(activeUserUnits);
+            }
+
             await _context.SaveChangesAsync();
             return true;
         }
