@@ -18,10 +18,10 @@ namespace GestaoOficina.Features.Users
         }
 
         public async Task<User> CreateUserAsync(CreateUserRequest dto, int tenantId)
-        {  
+        {
             var existingUserByEmail = await _context.Users
                 .FirstOrDefaultAsync(u => u.Email == dto.Email);
-            
+
             if (existingUserByEmail != null)
             {
                 throw new InvalidOperationException($"O email {dto.Email} já está registrado no sistema.");
@@ -31,7 +31,7 @@ namespace GestaoOficina.Features.Users
             {
                 var existingUserByPhone = await _context.Users
                     .FirstOrDefaultAsync(u => u.PhoneNumber == dto.PhoneNumber);
-                
+
                 if (existingUserByPhone != null)
                 {
                     throw new InvalidOperationException($"O telefone {dto.PhoneNumber} já está registrado no sistema.");
@@ -56,10 +56,10 @@ namespace GestaoOficina.Features.Users
                 AddressState = dto.AddressState,
                 Role = parsedRole,
                 IsActive = true,
-                FullAccess = parsedRole == UserRole.Admin ? true : false,
+                FullAccess = parsedRole == UserRole.Admin,
                 CreatedAt = DateTime.UtcNow
             };
-            
+
             var result = await _userManager.CreateAsync(user, dto.Password);
             if (!result.Succeeded)
             {
@@ -74,31 +74,29 @@ namespace GestaoOficina.Features.Users
 
                 foreach (var unit in tenantUnits)
                 {
-                    var userUnit = new UserUnit
+                    _context.UserUnits.Add(new UserUnit
                     {
                         UserId = user.Id,
                         UnitId = unit.Id,
                         IsActive = true
-                    };
-                    _context.UserUnits.Add(userUnit);
+                    });
                 }
             }
             else if (dto.UnitIds != null && dto.UnitIds.Count > 0)
             {
                 foreach (var unitId in dto.UnitIds)
                 {
-                    var userUnit = new UserUnit
+                    _context.UserUnits.Add(new UserUnit
                     {
                         UserId = user.Id,
                         UnitId = unitId,
                         IsActive = true
-                    };
-                    _context.UserUnits.Add(userUnit);
+                    });
                 }
             }
 
             await _context.SaveChangesAsync();
-            return user;
+            return await GetUserByIdAsync(user.Id) ?? user;
         }
 
         public async Task<User?> GetUserByIdAsync(int id)
@@ -208,7 +206,10 @@ namespace GestaoOficina.Features.Users
                     existingUnit.IsActive = false;
                 }
 
-                _context.UserUnits.UpdateRange(existingUnits);
+                if (existingUnits.Count > 0)
+                {
+                    _context.UserUnits.UpdateRange(existingUnits);
+                }
 
                 if (parsedRole == UserRole.Admin)
                 {

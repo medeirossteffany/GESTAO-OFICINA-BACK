@@ -17,50 +17,26 @@ namespace GestaoOficina.Features.Onboarding
             _userManager = userManager;
         }
 
-        public async Task<(Tenant tenant, Unit unit, User user)> OnboardAsync(OnboardingRequest dto)
+        public async Task<(Tenant tenant, Unit? unit, User user)> OnboardAsync(OnboardingRequest dto)
         {
             await using var transaction = await _context.Database.BeginTransactionAsync();
 
-            if (dto.Unit == null)
+            var existingUserByEmail = await _context.Users
+                .FirstOrDefaultAsync(u => u.Email == dto.AdminEmail);
+
+            if (existingUserByEmail != null)
             {
                 await transaction.RollbackAsync();
-                throw new InvalidOperationException("A unidade matriz é obrigatória.");
+                throw new InvalidOperationException($"O email {dto.AdminEmail} já está registrado no sistema.");
             }
 
-            if (!string.IsNullOrWhiteSpace(dto.AdminEmail))
+            var existingUserByPhone = await _context.Users
+                .FirstOrDefaultAsync(u => u.PhoneNumber == dto.AdminPhoneNumber);
+
+            if (existingUserByPhone != null)
             {
-                var existingUserByEmail = await _context.Users
-                    .FirstOrDefaultAsync(u => u.Email == dto.AdminEmail);
-
-                if (existingUserByEmail != null)
-                {
-                    await transaction.RollbackAsync();
-                    throw new InvalidOperationException($"O email {dto.AdminEmail} já está registrado no sistema.");
-                }
-            }
-
-            if (!string.IsNullOrWhiteSpace(dto.AdminPhoneNumber))
-            {
-                var existingUserByPhone = await _context.Users
-                    .FirstOrDefaultAsync(u => u.PhoneNumber == dto.AdminPhoneNumber);
-
-                if (existingUserByPhone != null)
-                {
-                    await transaction.RollbackAsync();
-                    throw new InvalidOperationException($"O telefone {dto.AdminPhoneNumber} já está registrado no sistema.");
-                }
-            }
-
-            if (!string.IsNullOrWhiteSpace(dto.Unit.Cnpj))
-            {
-                var unitInOtherTenant = await _context.Units
-                    .FirstOrDefaultAsync(u => u.Cnpj == dto.Unit.Cnpj);
-
-                if (unitInOtherTenant != null)
-                {
-                    await transaction.RollbackAsync();
-                    throw new InvalidOperationException($"O CNPJ {dto.Unit.Cnpj} já está sendo utilizado por outra Unit.");
-                }
+                await transaction.RollbackAsync();
+                throw new InvalidOperationException($"O telefone {dto.AdminPhoneNumber} já está registrado no sistema.");
             }
 
             var tenant = new Tenant
@@ -72,26 +48,40 @@ namespace GestaoOficina.Features.Onboarding
             _context.Tenants.Add(tenant);
             await _context.SaveChangesAsync();
 
-            var unit = new Unit
+            Unit? unit = null;
+
+            if (dto.Unit != null)
             {
-                TenantId = tenant.Id,
-                Name = dto.Unit.Name,
-                Cnpj = dto.Unit.Cnpj,
-                AddressZip = dto.Unit.AddressZip,
-                AddressStreet = dto.Unit.AddressStreet,
-                AddressNumber = dto.Unit.AddressNumber,
-                AddressDistrict = dto.Unit.AddressDistrict,
-                AddressCity = dto.Unit.AddressCity,
-                AddressState = dto.Unit.AddressState,
-                CreatedAt = DateTime.UtcNow
-            };
+                var unitInOtherTenant = await _context.Units
+                    .FirstOrDefaultAsync(u => u.Cnpj == dto.Unit.Cnpj);
 
-            _context.Units.Add(unit);
-            await _context.SaveChangesAsync();
+                if (unitInOtherTenant != null)
+                {
+                    await transaction.RollbackAsync();
+                    throw new InvalidOperationException($"O CNPJ {dto.Unit.Cnpj} já está sendo utilizado por outra Unit.");
+                }
 
-            tenant.UnitId = unit.Id;
-            _context.Tenants.Update(tenant);
-            await _context.SaveChangesAsync();
+                unit = new Unit
+                {
+                    TenantId = tenant.Id,
+                    Name = dto.Unit.Name,
+                    Cnpj = dto.Unit.Cnpj,
+                    AddressZip = dto.Unit.AddressZip,
+                    AddressStreet = dto.Unit.AddressStreet,
+                    AddressNumber = dto.Unit.AddressNumber,
+                    AddressDistrict = dto.Unit.AddressDistrict,
+                    AddressCity = dto.Unit.AddressCity,
+                    AddressState = dto.Unit.AddressState,
+                    CreatedAt = DateTime.UtcNow
+                };
+
+                _context.Units.Add(unit);
+                await _context.SaveChangesAsync();
+
+                tenant.UnitId = unit.Id;
+                _context.Tenants.Update(tenant);
+                await _context.SaveChangesAsync();
+            }
 
             var user = new User
             {
@@ -113,11 +103,14 @@ namespace GestaoOficina.Features.Onboarding
                 throw new Exception($"Erro ao criar usuário: {string.Join(", ", result.Errors.Select(e => e.Description))}");
             }
 
-            _context.UserUnits.Add(new UserUnit
+            if (unit != null)
             {
-                UserId = user.Id,
-                UnitId = unit.Id
-            });
+                _context.UserUnits.Add(new UserUnit
+                {
+                    UserId = user.Id,
+                    UnitId = unit.Id
+                });
+            }
 
             await _context.SaveChangesAsync();
             await transaction.CommitAsync();

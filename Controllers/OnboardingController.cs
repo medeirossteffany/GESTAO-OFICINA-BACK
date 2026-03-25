@@ -21,7 +21,7 @@ namespace GestaoOficina.Controllers
             return Ok(new
             {
                 TenantId = tenant.Id,
-                UnitId = unit.Id,
+                UnitId = unit?.Id,
                 UserId = user.Id
             });
         }

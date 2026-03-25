@@ -98,8 +98,10 @@ namespace GestaoOficina.Features.ServiceOrders
             }
 
             var now = DateTime.UtcNow;
+            var bodyworkValue = dto.BodyworkValue ?? 0m;
+            var paintValue = dto.PaintValue ?? 0m;
             var partsValue = dto.Parts?.Sum(p => p.Quantity * p.UnitPrice) ?? 0m;
-            var totalAmount = dto.BodyworkValue + dto.PaintValue + partsValue;
+            var totalAmount = bodyworkValue + paintValue + partsValue;
 
             if (totalAmount < 0)
             {
@@ -115,12 +117,12 @@ namespace GestaoOficina.Features.ServiceOrders
                 VehicleId = dto.VehicleId,
                 OwnerCustomerId = dto.OwnerCustomerId,
                 StatusId = initialStatus.Id,
-                EntryDate = dto.EntryDate,
+                EntryDate = dto.EntryDate!.Value,
                 EstimatedDeliveryDate = dto.EstimatedDeliveryDate,
                 BodyworkDescription = dto.BodyworkDescription,
-                BodyworkValue = dto.BodyworkValue,
+                BodyworkValue = bodyworkValue,
                 PaintDescription = dto.PaintDescription,
-                PaintValue = dto.PaintValue,
+                PaintValue = paintValue,
                 PartsValue = partsValue,
                 TotalAmount = totalAmount,
                 IsActive = true,
@@ -212,7 +214,7 @@ namespace GestaoOficina.Features.ServiceOrders
                 throw new InvalidOperationException("Cliente responsável inválido para o tenant informado.");
             }
 
-            var customerLinkedToUnit = ownerCustomer.CustomerUnits.Any(cu => cu.UnitId == targetUnitId);
+            var customerLinkedToUnit = ownerCustomer.CustomerUnits.Any(cu => cu.IsActive && cu.UnitId == targetUnitId);
             if (!customerLinkedToUnit)
             {
                 throw new InvalidOperationException("Cliente responsável não está vinculado à unidade informada.");
