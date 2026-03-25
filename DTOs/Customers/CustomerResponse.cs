@@ -1,4 +1,4 @@
-namespace GestaoOficina.DTOs.Customers
+﻿namespace GestaoOficina.DTOs.Customers
 {
     public class CustomerResponse
     {

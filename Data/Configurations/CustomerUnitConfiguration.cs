@@ -1,4 +1,4 @@
-using GestaoOficina.Entities;
+﻿using GestaoOficina.Entities;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
 

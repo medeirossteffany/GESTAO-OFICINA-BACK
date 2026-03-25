@@ -1,4 +1,4 @@
-using GestaoOficina.Entities;
+﻿using GestaoOficina.Entities;
 using GestaoOficina.DTOs.Users;
 using GestaoOficina.Data;
 using Microsoft.AspNetCore.Identity;
@@ -24,7 +24,7 @@ namespace GestaoOficina.Features.Users
             
             if (existingUserByEmail != null)
             {
-                throw new InvalidOperationException($"O email {dto.Email} já está registrado no sistema.");
+                throw new InvalidOperationException($"O email {dto.Email} jÃ¡ estÃ¡ registrado no sistema.");
             }
 
             if (!string.IsNullOrWhiteSpace(dto.PhoneNumber))
@@ -34,7 +34,7 @@ namespace GestaoOficina.Features.Users
                 
                 if (existingUserByPhone != null)
                 {
-                    throw new InvalidOperationException($"O telefone {dto.PhoneNumber} já está registrado no sistema.");
+                    throw new InvalidOperationException($"O telefone {dto.PhoneNumber} jÃ¡ estÃ¡ registrado no sistema.");
                 }
             }
 
@@ -56,7 +56,7 @@ namespace GestaoOficina.Features.Users
             var result = await _userManager.CreateAsync(user, dto.Password);
             if (!result.Succeeded)
             {
-                throw new Exception($"Erro ao criar usuário: {string.Join(", ", result.Errors.Select(e => e.Description))}");
+                throw new Exception($"Erro ao criar usuÃ¡rio: {string.Join(", ", result.Errors.Select(e => e.Description))}");
             }
 
             if (parsedRole == UserRole.Admin)
@@ -117,7 +117,7 @@ namespace GestaoOficina.Features.Users
 
                 if (existingUserByPhone != null)
                 {
-                    throw new InvalidOperationException($"O telefone {dto.PhoneNumber} já está registrado no sistema.");
+                    throw new InvalidOperationException($"O telefone {dto.PhoneNumber} jÃ¡ estÃ¡ registrado no sistema.");
                 }
             }
 
@@ -145,7 +145,7 @@ namespace GestaoOficina.Features.Users
 
                 if (existingUserByEmail != null)
                 {
-                    throw new InvalidOperationException($"O email {targetEmail} já está registrado no sistema.");
+                    throw new InvalidOperationException($"O email {targetEmail} jÃ¡ estÃ¡ registrado no sistema.");
                 }
             }
 
@@ -156,7 +156,7 @@ namespace GestaoOficina.Features.Users
 
                 if (existingUserByPhone != null)
                 {
-                    throw new InvalidOperationException($"O telefone {dto.PhoneNumber} já está registrado no sistema.");
+                    throw new InvalidOperationException($"O telefone {dto.PhoneNumber} jÃ¡ estÃ¡ registrado no sistema.");
                 }
             }
 

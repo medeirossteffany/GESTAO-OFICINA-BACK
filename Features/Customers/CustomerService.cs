@@ -1,4 +1,4 @@
-using GestaoOficina.Data;
+﻿using GestaoOficina.Data;
 using GestaoOficina.DTOs.Customers;
 using GestaoOficina.Entities;
 using Microsoft.EntityFrameworkCore;
@@ -38,7 +38,7 @@ namespace GestaoOficina.Features.Customers
 
             if (!legalTypeExists)
             {
-                throw new InvalidOperationException("Tipo legal do cliente inválido.");
+                throw new InvalidOperationException("Tipo legal do cliente invÃ¡lido.");
             }
 
             var unitExistsInTenant = await _context.Units
@@ -46,7 +46,7 @@ namespace GestaoOficina.Features.Customers
 
             if (!unitExistsInTenant)
             {
-                throw new InvalidOperationException("Loja inválida para o tenant informado.");
+                throw new InvalidOperationException("Loja invÃ¡lida para o tenant informado.");
             }
 
             if (!string.IsNullOrWhiteSpace(dto.CpfCnpj))
@@ -125,7 +125,7 @@ namespace GestaoOficina.Features.Customers
 
                 if (!legalTypeExists)
                 {
-                    throw new InvalidOperationException("Tipo legal do cliente inválido.");
+                    throw new InvalidOperationException("Tipo legal do cliente invÃ¡lido.");
                 }
 
                 customer.LegalTypeId = dto.LegalTypeId.Value;

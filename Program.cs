@@ -1,4 +1,4 @@
-using Microsoft.AspNetCore.Authentication.JwtBearer;
+﻿using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.IdentityModel.Tokens;
 using System.Text;
 using System.Text.Json;
@@ -20,7 +20,6 @@ Env.Load();
 
 var builder = WebApplication.CreateBuilder(args);
 
-// Add services to the container.
 builder.Services.AddControllers()
     .AddJsonOptions(options =>
     {
@@ -28,7 +27,6 @@ builder.Services.AddControllers()
     });
 builder.Services.AddOpenApi();
 
-// DbContext
 var connectionString =
     $"server={Environment.GetEnvironmentVariable("DB_SERVER") ?? "127.0.0.1"};" +
     $"port={Environment.GetEnvironmentVariable("DB_PORT") ?? "3306"};" +
@@ -41,7 +39,6 @@ builder.Services.AddDbContext<AppDbContext>(options =>
     options.UseMySql(connectionString, ServerVersion.AutoDetect(connectionString))
 );
 
-// Identity + EF Core
 builder.Services.AddIdentity<User, IdentityRole<int>>(options =>
 {
     options.Password.RequireDigit = false;
@@ -52,7 +49,6 @@ builder.Services.AddIdentity<User, IdentityRole<int>>(options =>
 })
 .AddEntityFrameworkStores<AppDbContext>();
 
-// JWT Authentication
 var jwtKey = Environment.GetEnvironmentVariable("JWT_KEY") ?? "sua-chave-secreta-bem-grande";
 var jwtIssuer = Environment.GetEnvironmentVariable("JWT_ISSUER") ?? "GestaoOficina";
 builder.Services.AddAuthentication(options =>
@@ -75,7 +71,6 @@ builder.Services.AddAuthentication(options =>
 
 builder.Services.AddAuthorization();
 
-// Application Services
 builder.Services.AddScoped<OnboardingService>();
 builder.Services.AddScoped<TenantService>();
 builder.Services.AddScoped<UserService>();
@@ -86,7 +81,6 @@ builder.Services.AddScoped<ServiceOrderService>();
 
 var app = builder.Build();
 
-// Configure the HTTP request pipeline.
 if (app.Environment.IsDevelopment())
 {
     app.MapOpenApi();

@@ -1,4 +1,4 @@
-using GestaoOficina.Entities;
+﻿using GestaoOficina.Entities;
 using GestaoOficina.DTOs.Tenants;
 using GestaoOficina.Data;
 using Microsoft.EntityFrameworkCore;

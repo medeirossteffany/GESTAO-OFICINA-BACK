@@ -1,4 +1,4 @@
-namespace GestaoOficina.DTOs.Tenants
+﻿namespace GestaoOficina.DTOs.Tenants
 {
     public class UpdateTenantRequest
     {

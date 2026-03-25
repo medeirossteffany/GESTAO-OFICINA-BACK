@@ -1,4 +1,4 @@
-using GestaoOficina.Data;
+﻿using GestaoOficina.Data;
 using GestaoOficina.DTOs.ServiceOrders;
 using GestaoOficina.Entities;
 using Microsoft.EntityFrameworkCore;
@@ -53,7 +53,7 @@ namespace GestaoOficina.Features.ServiceOrders
         {
             if (!fullAccess && !unitIds.Contains(dto.UnitId))
             {
-                throw new InvalidOperationException("Usuário sem acesso à unidade informada.");
+                throw new InvalidOperationException("UsuÃ¡rio sem acesso Ã  unidade informada.");
             }
 
             var unitExists = await _context.Units
@@ -61,7 +61,7 @@ namespace GestaoOficina.Features.ServiceOrders
 
             if (!unitExists)
             {
-                throw new InvalidOperationException("Unidade inválida para o tenant informado.");
+                throw new InvalidOperationException("Unidade invÃ¡lida para o tenant informado.");
             }
 
             var vehicle = await _context.Vehicles
@@ -69,7 +69,7 @@ namespace GestaoOficina.Features.ServiceOrders
 
             if (vehicle == null)
             {
-                throw new InvalidOperationException("Veículo inválido para o tenant informado.");
+                throw new InvalidOperationException("VeÃ­culo invÃ¡lido para o tenant informado.");
             }
 
             var ownerCustomer = await _context.Customers
@@ -78,13 +78,13 @@ namespace GestaoOficina.Features.ServiceOrders
 
             if (ownerCustomer == null)
             {
-                throw new InvalidOperationException("Cliente responsável inválido para o tenant informado.");
+                throw new InvalidOperationException("Cliente responsÃ¡vel invÃ¡lido para o tenant informado.");
             }
 
             var customerLinkedToUnit = ownerCustomer.CustomerUnits.Any(cu => cu.UnitId == dto.UnitId);
             if (!customerLinkedToUnit)
             {
-                throw new InvalidOperationException("Cliente responsável não está vinculado à unidade informada.");
+                throw new InvalidOperationException("Cliente responsÃ¡vel nÃ£o estÃ¡ vinculado Ã  unidade informada.");
             }
 
             var initialStatus = await _context.ServiceOrderStatuses
@@ -92,7 +92,7 @@ namespace GestaoOficina.Features.ServiceOrders
 
             if (initialStatus == null)
             {
-                throw new InvalidOperationException("Status inicial ENVIADO não encontrado.");
+                throw new InvalidOperationException("Status inicial ENVIADO nÃ£o encontrado.");
             }
 
             var now = DateTime.UtcNow;
@@ -150,7 +150,7 @@ namespace GestaoOficina.Features.ServiceOrders
                 TenantId = tenantId,
                 ServiceOrderId = serviceOrder.Id,
                 EventType = "CREATED",
-                Message = "Ordem de serviço criada com status ENVIADO.",
+                Message = "Ordem de serviÃ§o criada com status ENVIADO.",
                 OldStatusId = null,
                 NewStatusId = initialStatus.Id,
                 CreatedAt = now
@@ -180,7 +180,7 @@ namespace GestaoOficina.Features.ServiceOrders
 
             if (!fullAccess && (!unitIds.Contains(serviceOrder.UnitId) || !unitIds.Contains(targetUnitId)))
             {
-                throw new InvalidOperationException("Usuário sem acesso à unidade informada.");
+                throw new InvalidOperationException("UsuÃ¡rio sem acesso Ã  unidade informada.");
             }
 
             var unitExists = await _context.Units
@@ -188,7 +188,7 @@ namespace GestaoOficina.Features.ServiceOrders
 
             if (!unitExists)
             {
-                throw new InvalidOperationException("Unidade inválida para o tenant informado.");
+                throw new InvalidOperationException("Unidade invÃ¡lida para o tenant informado.");
             }
 
             var vehicle = await _context.Vehicles
@@ -196,7 +196,7 @@ namespace GestaoOficina.Features.ServiceOrders
 
             if (vehicle == null)
             {
-                throw new InvalidOperationException("Veículo inválido para o tenant informado.");
+                throw new InvalidOperationException("VeÃ­culo invÃ¡lido para o tenant informado.");
             }
 
             var ownerCustomer = await _context.Customers
@@ -205,13 +205,13 @@ namespace GestaoOficina.Features.ServiceOrders
 
             if (ownerCustomer == null)
             {
-                throw new InvalidOperationException("Cliente responsável inválido para o tenant informado.");
+                throw new InvalidOperationException("Cliente responsÃ¡vel invÃ¡lido para o tenant informado.");
             }
 
             var customerLinkedToUnit = ownerCustomer.CustomerUnits.Any(cu => cu.UnitId == targetUnitId);
             if (!customerLinkedToUnit)
             {
-                throw new InvalidOperationException("Cliente responsável não está vinculado à unidade informada.");
+                throw new InvalidOperationException("Cliente responsÃ¡vel nÃ£o estÃ¡ vinculado Ã  unidade informada.");
             }
 
             if (dto.StatusId.HasValue)
@@ -219,7 +219,7 @@ namespace GestaoOficina.Features.ServiceOrders
                 var statusExists = await _context.ServiceOrderStatuses.AnyAsync(s => s.Id == dto.StatusId.Value);
                 if (!statusExists)
                 {
-                    throw new InvalidOperationException("Status inválido.");
+                    throw new InvalidOperationException("Status invÃ¡lido.");
                 }
             }
 
@@ -299,8 +299,8 @@ namespace GestaoOficina.Features.ServiceOrders
                 ServiceOrderId = serviceOrder.Id,
                 EventType = statusChanged ? "STATUS_CHANGED" : "UPDATED",
                 Message = statusChanged
-                    ? "Status da ordem de serviço atualizado."
-                    : "Ordem de serviço atualizada.",
+                    ? "Status da ordem de serviÃ§o atualizado."
+                    : "Ordem de serviÃ§o atualizada.",
                 OldStatusId = statusChanged ? oldStatusId : null,
                 NewStatusId = statusChanged ? serviceOrder.StatusId : null,
                 CreatedAt = now
@@ -325,7 +325,7 @@ namespace GestaoOficina.Features.ServiceOrders
 
             if (!fullAccess && !unitIds.Contains(serviceOrder.UnitId))
             {
-                throw new InvalidOperationException("Usuário sem acesso à unidade informada.");
+                throw new InvalidOperationException("UsuÃ¡rio sem acesso Ã  unidade informada.");
             }
 
             await using var transaction = await _context.Database.BeginTransactionAsync();

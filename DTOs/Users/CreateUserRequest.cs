@@ -1,4 +1,4 @@
-namespace GestaoOficina.DTOs.Users
+﻿namespace GestaoOficina.DTOs.Users
 {
     public class CreateUserRequest
     {

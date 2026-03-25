@@ -1,13 +1,13 @@
-namespace GestaoOficina.DTOs.ServiceOrders
+﻿namespace GestaoOficina.DTOs.ServiceOrders
 {
     public class CreateServiceOrderRequest
     {
         public int UnitId { get; set; } // Loja
-        public int VehicleId { get; set; } // Veículo
-        public int OwnerCustomerId { get; set; } // Cliente responsável
+        public int VehicleId { get; set; } // VeÃ­culo
+        public int OwnerCustomerId { get; set; } // Cliente responsÃ¡vel
 
         public DateTime EntryDate { get; set; } // Data de entrada
-        public DateTime? EstimatedDeliveryDate { get; set; } // Previsão saída
+        public DateTime? EstimatedDeliveryDate { get; set; } // PrevisÃ£o saÃ­da
 
         public string? BodyworkDescription { get; set; } // Funilaria
         public decimal BodyworkValue { get; set; }

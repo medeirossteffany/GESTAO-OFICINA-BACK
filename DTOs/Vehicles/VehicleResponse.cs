@@ -1,4 +1,4 @@
-namespace GestaoOficina.DTOs.Vehicles
+﻿namespace GestaoOficina.DTOs.Vehicles
 {
     public class VehicleResponse
     {

@@ -1,4 +1,4 @@
-using GestaoOficina.Data;
+﻿using GestaoOficina.Data;
 using GestaoOficina.DTOs.Vehicles;
 using GestaoOficina.Entities;
 using Microsoft.EntityFrameworkCore;
@@ -46,7 +46,7 @@ namespace GestaoOficina.Features.Vehicles
             var customer = await GetCustomerById(dto.CustomerId, tenantId);
             if (customer == null)
             {
-                throw new InvalidOperationException("Cliente inválido para o tenant informado.");
+                throw new InvalidOperationException("Cliente invÃ¡lido para o tenant informado.");
             }
 
             var duplicatePlate = await _context.Vehicles
@@ -54,7 +54,7 @@ namespace GestaoOficina.Features.Vehicles
 
             if (duplicatePlate)
             {
-                throw new InvalidOperationException($"A placa {dto.Plate} já está cadastrada para este tenant.");
+                throw new InvalidOperationException($"A placa {dto.Plate} jÃ¡ estÃ¡ cadastrada para este tenant.");
             }
 
             var vehicle = new Vehicle
@@ -92,7 +92,7 @@ namespace GestaoOficina.Features.Vehicles
             var customer = await GetCustomerById(targetCustomerId, tenantId);
             if (customer == null)
             {
-                throw new InvalidOperationException("Cliente inválido para o tenant informado.");
+                throw new InvalidOperationException("Cliente invÃ¡lido para o tenant informado.");
             }
 
             var targetPlate = dto.Plate ?? vehicle.Plate;
@@ -103,7 +103,7 @@ namespace GestaoOficina.Features.Vehicles
 
                 if (duplicatePlate)
                 {
-                    throw new InvalidOperationException($"A placa {targetPlate} já está cadastrada para este tenant.");
+                    throw new InvalidOperationException($"A placa {targetPlate} jÃ¡ estÃ¡ cadastrada para este tenant.");
                 }
             }
 

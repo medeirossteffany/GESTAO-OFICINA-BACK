@@ -1,4 +1,4 @@
-using GestaoOficina.Entities;
+ï»¿using GestaoOficina.Entities;
 using GestaoOficina.DTOs.Onboarding;
 using GestaoOficina.Data;
 using Microsoft.AspNetCore.Identity;
@@ -24,7 +24,7 @@ namespace GestaoOficina.Features.Onboarding
             if (dto.Unit == null)
             {
                 await transaction.RollbackAsync();
-                throw new InvalidOperationException("A unidade matriz é obrigatória.");
+                throw new InvalidOperationException("A unidade matriz Ã© obrigatÃ³ria.");
             }
 
             if (!string.IsNullOrWhiteSpace(dto.AdminEmail))
@@ -35,7 +35,7 @@ namespace GestaoOficina.Features.Onboarding
                 if (existingUserByEmail != null)
                 {
                     await transaction.RollbackAsync();
-                    throw new InvalidOperationException($"O email {dto.AdminEmail} já está registrado no sistema.");
+                    throw new InvalidOperationException($"O email {dto.AdminEmail} jÃ¡ estÃ¡ registrado no sistema.");
                 }
             }
 
@@ -47,7 +47,7 @@ namespace GestaoOficina.Features.Onboarding
                 if (existingUserByPhone != null)
                 {
                     await transaction.RollbackAsync();
-                    throw new InvalidOperationException($"O telefone {dto.AdminPhoneNumber} já está registrado no sistema.");
+                    throw new InvalidOperationException($"O telefone {dto.AdminPhoneNumber} jÃ¡ estÃ¡ registrado no sistema.");
                 }
             }
 
@@ -59,7 +59,7 @@ namespace GestaoOficina.Features.Onboarding
                 if (unitInOtherTenant != null)
                 {
                     await transaction.RollbackAsync();
-                    throw new InvalidOperationException($"O CNPJ {dto.Unit.Cnpj} já está sendo utilizado por outra Unit.");
+                    throw new InvalidOperationException($"O CNPJ {dto.Unit.Cnpj} jÃ¡ estÃ¡ sendo utilizado por outra Unit.");
                 }
             }
 
@@ -110,7 +110,7 @@ namespace GestaoOficina.Features.Onboarding
             if (!result.Succeeded)
             {
                 await transaction.RollbackAsync();
-                throw new Exception($"Erro ao criar usuário: {string.Join(", ", result.Errors.Select(e => e.Description))}");
+                throw new Exception($"Erro ao criar usuÃ¡rio: {string.Join(", ", result.Errors.Select(e => e.Description))}");
             }
 
             _context.UserUnits.Add(new UserUnit

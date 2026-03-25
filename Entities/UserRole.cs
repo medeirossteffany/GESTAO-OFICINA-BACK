@@ -1,4 +1,4 @@
-namespace GestaoOficina.Entities
+﻿namespace GestaoOficina.Entities
 {
     public enum UserRole
     {

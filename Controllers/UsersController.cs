@@ -1,4 +1,4 @@
-using Microsoft.AspNetCore.Mvc;
+﻿using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Authorization;
 using GestaoOficina.DTOs.Users;
 using GestaoOficina.Features.Users;
@@ -64,7 +64,7 @@ namespace GestaoOficina.Controllers
 
             var isAdmin = Enum.TryParse<UserRole>(dto.Role, true, out var role) && role == UserRole.Admin;
             if (isAdmin && dto.UnitIds != null && dto.UnitIds.Count > 0)
-                return BadRequest("Usuários admin são atribuidos a todas as units automaticamente. Não é possível especificar unidades individuais.");
+                return BadRequest("UsuÃ¡rios admin sÃ£o atribuidos a todas as units automaticamente. NÃ£o Ã© possÃ­vel especificar unidades individuais.");
 
             var user = await _service.CreateUserAsync(dto, tenantId);
             var response = new UserResponse
@@ -105,7 +105,7 @@ namespace GestaoOficina.Controllers
             var roleToValidate = dto.Role ?? userToUpdate.Role.ToString();
             var isAdmin = Enum.TryParse<UserRole>(roleToValidate, true, out var role) && role == UserRole.Admin;
             if (isAdmin && dto.UnitIds != null && dto.UnitIds.Count > 0)
-                return BadRequest("Usuários admin são atribuidos a todas as units automaticamente. Não é possível especificar unidades individuais.");
+                return BadRequest("UsuÃ¡rios admin sÃ£o atribuidos a todas as units automaticamente. NÃ£o Ã© possÃ­vel especificar unidades individuais.");
 
             var updatedUser = await _service.UpdateUserAsync(id, dto);
             if (updatedUser == null)

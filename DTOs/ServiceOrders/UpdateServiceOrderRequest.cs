@@ -1,4 +1,4 @@
-namespace GestaoOficina.DTOs.ServiceOrders
+﻿namespace GestaoOficina.DTOs.ServiceOrders
 {
     public class UpdateServiceOrderRequest
     {

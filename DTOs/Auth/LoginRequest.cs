@@ -1,4 +1,4 @@
-namespace GestaoOficina.DTOs.Auth
+﻿namespace GestaoOficina.DTOs.Auth
 {
     public class LoginRequest
     {

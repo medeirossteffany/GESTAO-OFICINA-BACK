@@ -1,4 +1,4 @@
-using GestaoOficina.Entities;
+﻿using GestaoOficina.Entities;
 
 namespace GestaoOficina.DTOs.Users
 {

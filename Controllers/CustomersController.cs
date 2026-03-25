@@ -1,4 +1,4 @@
-using System.Security.Claims;
+﻿using System.Security.Claims;
 using GestaoOficina.DTOs.Customers;
 using GestaoOficina.Entities;
 using GestaoOficina.Features.Customers;
@@ -107,7 +107,7 @@ namespace GestaoOficina.Controllers
                 {
                     if (!int.TryParse(part, out var parsed))
                     {
-                        return BadRequest("Parâmetro unitIds inválido.");
+                        return BadRequest("ParÃ¢metro unitIds invÃ¡lido.");
                     }
 
                     targetUnitIds.Add(parsed);
@@ -117,7 +117,7 @@ namespace GestaoOficina.Controllers
             targetUnitIds = targetUnitIds.Distinct().ToList();
             if (targetUnitIds.Count == 0)
             {
-                return BadRequest("Informe ao menos um unitId/unitIds para remoção.");
+                return BadRequest("Informe ao menos um unitId/unitIds para remoÃ§Ã£o.");
             }
 
             if (!fullAccess && targetUnitIds.Any(idToRemove => !allowedUnitIds.Contains(idToRemove))) return Forbid();
