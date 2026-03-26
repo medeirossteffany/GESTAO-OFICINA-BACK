@@ -80,7 +80,20 @@ builder.Services.AddScoped<VehicleService>();
 builder.Services.AddScoped<ServiceOrderService>();
 builder.Services.AddScoped<ServiceOrderPdfService>();
 
+builder.Services.AddCors(options =>
+{
+    options.AddPolicy("AllowFrontend", policy =>
+    {
+        policy
+            .WithOrigins("http://localhost:4200")
+            .AllowAnyHeader()
+            .AllowAnyMethod();
+    });
+});
+
 var app = builder.Build();
+
+app.UseCors("AllowFrontend");
 
 if (app.Environment.IsDevelopment())
 {
