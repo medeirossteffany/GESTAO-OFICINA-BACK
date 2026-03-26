@@ -14,11 +14,37 @@ namespace GestaoOficina.Controllers
     {
         private readonly ServiceOrderService _service;
         private readonly ServiceOrderPdfService _pdfService;
+        private readonly ServiceOrderExcelService _excelService;
 
-        public ServiceOrdersController(ServiceOrderService service, ServiceOrderPdfService pdfService)
+        public ServiceOrdersController(
+            ServiceOrderService service,
+            ServiceOrderPdfService pdfService,
+            ServiceOrderExcelService excelService)
         {
             _service = service;
             _pdfService = pdfService;
+            _excelService = excelService;
+        }
+
+        [HttpPost("import/excel/resumo")]
+        public async Task<IActionResult> ImportExcelResumoPorLoja([FromForm] IFormFile file)
+        {
+            if (file is null || file.Length == 0)
+                return BadRequest(new { message = "Arquivo não enviado." });
+
+            var loggedTenantId = int.Parse(User.FindFirstValue("TenantId"));
+            var fullAccess = bool.Parse(User.FindFirstValue("FullAccess") ?? "false");
+            var unitIds = User.FindAll("UnitId").Select(c => int.Parse(c.Value)).ToList();
+
+            try
+            {
+                var result = await _excelService.ParseExcelSummaryByStore(file, loggedTenantId, unitIds, fullAccess);
+                return Ok(result);
+            }
+            catch (InvalidOperationException ex)
+            {
+                return BadRequest(new { message = ex.Message });
+            }
         }
 
         [HttpGet]
