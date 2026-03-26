@@ -1,9 +1,9 @@
 ﻿using System.Security.Claims;
 using GestaoOficina.DTOs.ServiceOrders;
 using GestaoOficina.Entities;
-using GestaoOficina.Features.ServiceOrders;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using GestaoOficina.Features.ServiceOrders;
 
 namespace GestaoOficina.Controllers
 {
@@ -13,10 +13,12 @@ namespace GestaoOficina.Controllers
     public class ServiceOrdersController : ControllerBase
     {
         private readonly ServiceOrderService _service;
+        private readonly ServiceOrderPdfService _pdfService;
 
-        public ServiceOrdersController(ServiceOrderService service)
+        public ServiceOrdersController(ServiceOrderService service, ServiceOrderPdfService pdfService)
         {
             _service = service;
+            _pdfService = pdfService;
         }
 
         [HttpGet]
@@ -101,6 +103,21 @@ namespace GestaoOficina.Controllers
             if (!deleted) return NotFound();
 
             return NoContent();
+        }
+
+        [HttpGet("{id}/pdf")]
+        public async Task<IActionResult> DownloadServiceOrderPdf(int id)
+        {
+            var loggedTenantId = int.Parse(User.FindFirstValue("TenantId"));
+            var fullAccess = bool.Parse(User.FindFirstValue("FullAccess") ?? "false");
+            var unitIds = User.FindAll("UnitId").Select(c => int.Parse(c.Value)).ToList();
+
+            var serviceOrder = await _service.GetServiceOrderById(id);
+            if (serviceOrder == null) return NotFound();
+            if (!_service.HasAccess(serviceOrder, loggedTenantId, unitIds, fullAccess)) return Forbid();
+
+            var pdfBytes = await _pdfService.GenerateAsync(serviceOrder);
+            return File(pdfBytes, "application/pdf", $"os-{serviceOrder.Id}.pdf");
         }
 
         private static object ToResponse(ServiceOrder so)

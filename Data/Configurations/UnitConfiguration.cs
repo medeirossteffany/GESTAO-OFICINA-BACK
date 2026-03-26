@@ -22,6 +22,8 @@ namespace GestaoOficina.Data.Configurations
             builder.HasOne(u => u.Tenant)
                 .WithMany(t => t.Units)
                 .HasForeignKey(u => u.TenantId);
+            builder.Property(u => u.Email).HasMaxLength(255);
+            builder.Property(u => u.Phone).HasMaxLength(30);
         }
     }
 }

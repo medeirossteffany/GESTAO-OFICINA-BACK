@@ -38,7 +38,9 @@ namespace GestaoOficina.Features.Units
                 AddressCity = dto.AddressCity,
                 AddressState = dto.AddressState,
                 IsActive = true,
-                CreatedAt = DateTime.UtcNow
+                CreatedAt = DateTime.UtcNow,
+                Email = dto.Email,
+                Phone = dto.Phone,
             };
             _context.Units.Add(unit);
             await _context.SaveChangesAsync();
@@ -82,6 +84,8 @@ namespace GestaoOficina.Features.Units
             if (dto.AddressDistrict is not null) unit.AddressDistrict = dto.AddressDistrict;
             if (dto.AddressCity is not null) unit.AddressCity = dto.AddressCity;
             if (dto.AddressState is not null) unit.AddressState = dto.AddressState;
+            if (dto.Email is not null) unit.Email = dto.Email;
+            if (dto.Phone is not null) unit.Phone = dto.Phone;
 
             _context.Units.Update(unit);
             await _context.SaveChangesAsync();

@@ -72,7 +72,9 @@ namespace GestaoOficina.Features.Onboarding
                     AddressDistrict = dto.Unit.AddressDistrict,
                     AddressCity = dto.Unit.AddressCity,
                     AddressState = dto.Unit.AddressState,
-                    CreatedAt = DateTime.UtcNow
+                    CreatedAt = DateTime.UtcNow,
+                    Email = dto.Unit.Email,
+                    Phone = dto.Unit.Phone
                 };
 
                 _context.Units.Add(unit);

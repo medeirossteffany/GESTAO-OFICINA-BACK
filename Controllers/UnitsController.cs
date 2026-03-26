@@ -35,7 +35,9 @@ namespace GestaoOficina.Controllers
                 AddressDistrict = u.AddressDistrict,
                 AddressCity = u.AddressCity,
                 AddressState = u.AddressState,
-                CreatedAt = u.CreatedAt
+                CreatedAt = u.CreatedAt,
+                Email = u.Email,
+                Phone = u.Phone
             }).ToList();
             return Ok(response);
         }
@@ -60,7 +62,9 @@ namespace GestaoOficina.Controllers
                 AddressDistrict = unit.AddressDistrict,
                 AddressCity = unit.AddressCity,
                 AddressState = unit.AddressState,
-                CreatedAt = unit.CreatedAt
+                CreatedAt = unit.CreatedAt,
+                Email = unit.Email,
+                Phone = unit.Phone
             };
             return Ok(response);
         }
@@ -87,7 +91,9 @@ namespace GestaoOficina.Controllers
                 AddressDistrict = unit.AddressDistrict,
                 AddressCity = unit.AddressCity,
                 AddressState = unit.AddressState,
-                CreatedAt = unit.CreatedAt
+                CreatedAt = unit.CreatedAt,
+                Email = unit.Email,
+                Phone = unit.Phone
             };
             return CreatedAtAction(nameof(GetUnit), new { id = unit.Id }, response);
         }
@@ -117,7 +123,9 @@ namespace GestaoOficina.Controllers
                 AddressDistrict = updatedUnit.AddressDistrict,
                 AddressCity = updatedUnit.AddressCity,
                 AddressState = updatedUnit.AddressState,
-                CreatedAt = updatedUnit.CreatedAt
+                CreatedAt = updatedUnit.CreatedAt,
+                Email = updatedUnit.Email,
+                Phone = updatedUnit.Phone
             };
             return Ok(response);
         }

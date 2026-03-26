@@ -78,6 +78,7 @@ builder.Services.AddScoped<UnitService>();
 builder.Services.AddScoped<CustomerService>();
 builder.Services.AddScoped<VehicleService>();
 builder.Services.AddScoped<ServiceOrderService>();
+builder.Services.AddScoped<ServiceOrderPdfService>();
 
 var app = builder.Build();
 

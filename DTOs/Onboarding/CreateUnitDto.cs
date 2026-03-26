@@ -27,5 +27,7 @@ namespace GestaoOficina.DTOs.Onboarding
 
         [Required]
         public string AddressState { get; set; }
+        public string? Email { get; set; }
+        public string? Phone { get; set; }
     }
 }

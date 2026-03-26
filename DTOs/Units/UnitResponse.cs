@@ -12,6 +12,8 @@
         public string AddressDistrict { get; set; }
         public string AddressCity { get; set; }
         public string AddressState { get; set; }
+        public string? Email { get; set; }
+        public string? Phone { get; set; }
         public DateTime CreatedAt { get; set; }
     }
 }
