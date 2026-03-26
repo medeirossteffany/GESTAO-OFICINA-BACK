@@ -120,6 +120,43 @@ namespace GestaoOficina.Controllers
             return File(pdfBytes, "application/pdf", $"os-{serviceOrder.Id}.pdf");
         }
 
+        [HttpPatch("{id}/status/feito")]
+        [Authorize]
+        public async Task<IActionResult> MarkAsFeito(int id)
+        {
+            return await ChangeStatus(id, "FEITO");
+        }
+
+        [HttpPatch("{id}/status/finalizado")]
+        [Authorize]
+        public async Task<IActionResult> MarkAsFinalizado(int id)
+        {
+            return await ChangeStatus(id, "FINALIZADO");
+        }
+
+        private async Task<IActionResult> ChangeStatus(int id, string statusCode)
+        {
+            var loggedTenantId = int.Parse(User.FindFirstValue("TenantId"));
+            var fullAccess = bool.Parse(User.FindFirstValue("FullAccess") ?? "false");
+            var unitIds = User.FindAll("UnitId").Select(c => int.Parse(c.Value)).ToList();
+
+            try
+            {
+                var updated = await _service.ChangeStatus(id, statusCode, loggedTenantId, unitIds, fullAccess);
+                if (updated == null) return NotFound();
+
+                return Ok(ToResponse(updated));
+            }
+            catch (UnauthorizedAccessException)
+            {
+                return Forbid();
+            }
+            catch (InvalidOperationException ex)
+            {
+                return BadRequest(new { message = ex.Message });
+            }
+        }
+
         private static object ToResponse(ServiceOrder so)
         {
             return new

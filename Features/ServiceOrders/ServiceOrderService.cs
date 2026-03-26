@@ -326,6 +326,61 @@ namespace GestaoOficina.Features.ServiceOrders
             return await GetServiceOrderById(serviceOrder.Id) ?? serviceOrder;
         }
 
+        public async Task<ServiceOrder?> ChangeStatus(
+            int id,
+            string targetStatusCode,
+            int tenantId,
+            List<int> unitIds,
+            bool fullAccess)
+        {
+            var serviceOrder = await _context.ServiceOrders
+                .Include(so => so.Status)
+                .FirstOrDefaultAsync(so => so.Id == id && so.IsActive);
+
+            if (serviceOrder == null) return null;
+            if (!HasAccess(serviceOrder, tenantId, unitIds, fullAccess))
+                throw new UnauthorizedAccessException("Usuário sem acesso à OS.");
+
+            var targetStatus = await _context.ServiceOrderStatuses
+                .FirstOrDefaultAsync(s => s.Code == targetStatusCode);
+
+            if (targetStatus == null)
+                throw new InvalidOperationException("Status inválido.");
+
+            var currentCode = serviceOrder.Status?.Code;
+            var allowed =
+                (currentCode == "ENVIADO" && targetStatusCode == "FEITO") ||
+                (currentCode == "FEITO" && targetStatusCode == "FINALIZADO");
+
+            if (!allowed)
+                throw new InvalidOperationException($"Transição inválida: {currentCode} -> {targetStatusCode}.");
+
+            var now = DateTime.UtcNow;
+            var oldStatusId = serviceOrder.StatusId;
+
+            serviceOrder.StatusId = targetStatus.Id;
+            if (targetStatusCode == "FINALIZADO" && serviceOrder.DeliveryDate is null)
+                serviceOrder.DeliveryDate = now;
+
+            serviceOrder.UpdatedAt = now;
+
+            _context.ServiceOrderTimelines.Add(new ServiceOrderTimeline
+            {
+                TenantId = serviceOrder.TenantId,
+                ServiceOrderId = serviceOrder.Id,
+                EventType = "STATUS_CHANGED",
+                Message = $"Status alterado para {targetStatus.Name}.",
+                OldStatusId = oldStatusId,
+                NewStatusId = targetStatus.Id,
+                IsActive = true,
+                CreatedAt = now
+            });
+
+            await _context.SaveChangesAsync();
+
+            return await GetServiceOrderById(serviceOrder.Id);
+        }
+
         public async Task<bool> DeleteServiceOrder(
             int id,
             int tenantId,
