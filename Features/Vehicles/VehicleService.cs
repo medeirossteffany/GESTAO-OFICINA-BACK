@@ -14,15 +14,27 @@ namespace GestaoOficina.Features.Vehicles
             _context = context;
         }
 
-        public async Task<List<Vehicle>> GetVehiclesByTenantAndUnits(int tenantId, List<int> unitIds, bool fullAccess)
+        public async Task<List<Vehicle>> GetVehiclesByTenantAndUnits(
+            int tenantId,
+            List<int> unitIds,
+            bool fullAccess,
+            int? selectedUnitId = null)
         {
-            return await _context.Vehicles
+            var query = _context.Vehicles
                 .Where(v => v.TenantId == tenantId)
                 .Where(v => v.IsActive)
                 .Where(v => v.Customer.IsActive)
                 .Where(v => fullAccess || v.Customer.CustomerUnits.Any(cu => cu.IsActive && unitIds.Contains(cu.UnitId)))
                 .Include(v => v.Customer)
                     .ThenInclude(c => c.CustomerUnits.Where(cu => cu.IsActive))
+                .AsQueryable();
+
+            if (selectedUnitId.HasValue)
+            {
+                query = query.Where(v => v.Customer.CustomerUnits.Any(cu => cu.IsActive && cu.UnitId == selectedUnitId.Value));
+            }
+
+            return await query
                 .OrderBy(v => v.Plate)
                 .ToListAsync();
         }

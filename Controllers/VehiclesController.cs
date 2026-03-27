@@ -20,13 +20,16 @@ namespace GestaoOficina.Controllers
         }
 
         [HttpGet]
-        public async Task<ActionResult<List<VehicleResponse>>> GetVehicles()
+        public async Task<ActionResult<List<VehicleResponse>>> GetVehicles([FromQuery] int? unitId)
         {
             var loggedTenantId = int.Parse(User.FindFirstValue("TenantId"));
             var fullAccess = bool.Parse(User.FindFirstValue("FullAccess") ?? "false");
             var unitIds = User.FindAll("UnitId").Select(c => int.Parse(c.Value)).ToList();
 
-            var vehicles = await _service.GetVehiclesByTenantAndUnits(loggedTenantId, unitIds, fullAccess);
+            if (unitId.HasValue && !fullAccess && !unitIds.Contains(unitId.Value))
+                return Forbid();
+
+            var vehicles = await _service.GetVehiclesByTenantAndUnits(loggedTenantId, unitIds, fullAccess, unitId);
             return Ok(vehicles.Select(ToResponse).ToList());
         }
 
@@ -120,6 +123,7 @@ namespace GestaoOficina.Controllers
                 Id = vehicle.Id,
                 TenantId = vehicle.TenantId,
                 CustomerId = vehicle.CustomerId,
+                CustomerName = vehicle.Customer?.Name,
                 Plate = vehicle.Plate,
                 Brand = vehicle.Brand,
                 Model = vehicle.Model,
