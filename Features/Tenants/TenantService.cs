@@ -8,6 +8,7 @@ namespace GestaoOficina.Features.Tenants
     public class TenantService
     {
         private readonly AppDbContext _context;
+
         public TenantService(AppDbContext context)
         {
             _context = context;
@@ -38,12 +39,33 @@ namespace GestaoOficina.Features.Tenants
             var tenant = await _context.Tenants
                 .Include(t => t.Unit)
                 .FirstOrDefaultAsync(t => t.Id == id);
+
             if (tenant == null) return null;
 
-            if (dto.Name is not null) tenant.Name = dto.Name;
+            if (dto.Name is not null)
+                tenant.Name = dto.Name;
+
+            if (dto.Cnpj is not null)
+            {
+                if (tenant.Unit is null)
+                    throw new InvalidOperationException("Tenant não possui unidade vinculada para atualizar CNPJ.");
+
+                if (!string.Equals(tenant.Unit.Cnpj, dto.Cnpj, StringComparison.Ordinal))
+                {
+                    var unitInOtherTenant = await _context.Units
+                        .FirstOrDefaultAsync(u => u.TenantId != tenant.Id && u.Cnpj == dto.Cnpj);
+
+                    if (unitInOtherTenant is not null)
+                        throw new InvalidOperationException($"O CNPJ {dto.Cnpj} já está sendo utilizado por outra Unit de outro Tenant.");
+
+                    tenant.Unit.Cnpj = dto.Cnpj;
+                    _context.Units.Update(tenant.Unit);
+                }
+            }
 
             _context.Tenants.Update(tenant);
             await _context.SaveChangesAsync();
+
             return tenant;
         }
     }

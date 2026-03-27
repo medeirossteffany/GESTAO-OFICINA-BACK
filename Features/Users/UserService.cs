@@ -119,26 +119,32 @@ namespace GestaoOficina.Features.Users
             var user = await _context.Users.FirstOrDefaultAsync(u => u.Id == userId && u.IsActive);
             if (user == null) return null;
 
-            if (!string.IsNullOrWhiteSpace(dto.PhoneNumber) && user.PhoneNumber != dto.PhoneNumber)
+            if (dto.Name is not null)
             {
-                var existingUserByPhone = await _context.Users
-                    .FirstOrDefaultAsync(u => u.Id != userId && u.PhoneNumber == dto.PhoneNumber && u.IsActive);
-
-                if (existingUserByPhone != null)
-                {
-                    throw new InvalidOperationException($"O telefone {dto.PhoneNumber} já está registrado no sistema.");
-                }
+                user.Name = dto.Name;
             }
 
-            if (dto.Name is not null) user.Name = dto.Name;
-            if (dto.PhoneNumber is not null) user.PhoneNumber = dto.PhoneNumber;
-            if (dto.CpfCnpj is not null) user.CpfCnpj = dto.CpfCnpj;
-            if (dto.AddressZip is not null) user.AddressZip = dto.AddressZip;
-            if (dto.AddressStreet is not null) user.AddressStreet = dto.AddressStreet;
-            if (dto.AddressNumber is not null) user.AddressNumber = dto.AddressNumber;
-            if (dto.AddressDistrict is not null) user.AddressDistrict = dto.AddressDistrict;
-            if (dto.AddressCity is not null) user.AddressCity = dto.AddressCity;
-            if (dto.AddressState is not null) user.AddressState = dto.AddressState;
+            if (dto.Email is not null)
+            {
+                var targetEmail = dto.Email.Trim();
+
+                if (string.IsNullOrWhiteSpace(targetEmail))
+                    throw new InvalidOperationException("Email inválido.");
+
+                if (!string.Equals(user.Email, targetEmail, StringComparison.OrdinalIgnoreCase))
+                {
+                    var existingUserByEmail = await _context.Users
+                        .FirstOrDefaultAsync(u => u.Id != userId && u.Email == targetEmail && u.IsActive);
+
+                    if (existingUserByEmail != null)
+                        throw new InvalidOperationException($"O email {targetEmail} já está registrado no sistema.");
+
+                    user.Email = targetEmail;
+                    user.UserName = targetEmail;
+                    user.NormalizedEmail = _userManager.NormalizeEmail(targetEmail);
+                    user.NormalizedUserName = _userManager.NormalizeName(targetEmail);
+                }
+            }
 
             _context.Users.Update(user);
             await _context.SaveChangesAsync();
