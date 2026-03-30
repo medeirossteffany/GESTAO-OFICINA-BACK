@@ -19,6 +19,7 @@ namespace GestaoOficina.DTOs.ServiceOrders
         [Required]
         public DateTime? EstimatedDeliveryDate { get; set; }
 
+        [Required]
         public string? BodyworkDescription { get; set; }
         public decimal? BodyworkValue { get; set; }
 
@@ -66,10 +67,20 @@ namespace GestaoOficina.DTOs.ServiceOrders
         [Required]
         public string Description { get; set; }
 
-        [Range(typeof(decimal), "0.01", "79228162514264337593543950335")]
+        [Range(
+            typeof(decimal),
+            "0.01",
+            "79228162514264337593543950335",
+            ParseLimitsInInvariantCulture = true,
+            ConvertValueInInvariantCulture = true)]
         public decimal Quantity { get; set; }
 
-        [Range(typeof(decimal), "0.01", "79228162514264337593543950335")]
+        [Range(
+            typeof(decimal),
+            "0.01",
+            "79228162514264337593543950335",
+            ParseLimitsInInvariantCulture = true,
+            ConvertValueInInvariantCulture = true)]
         public decimal UnitPrice { get; set; }
     }
 }

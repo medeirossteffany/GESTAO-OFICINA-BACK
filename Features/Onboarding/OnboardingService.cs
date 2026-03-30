@@ -72,6 +72,7 @@ namespace GestaoOficina.Features.Onboarding
                     AddressDistrict = dto.Unit.AddressDistrict,
                     AddressCity = dto.Unit.AddressCity,
                     AddressState = dto.Unit.AddressState,
+                    IsActive = true,
                     CreatedAt = DateTime.UtcNow,
                     Email = dto.Unit.Email,
                     Phone = dto.Unit.Phone
@@ -110,7 +111,8 @@ namespace GestaoOficina.Features.Onboarding
                 _context.UserUnits.Add(new UserUnit
                 {
                     UserId = user.Id,
-                    UnitId = unit.Id
+                    UnitId = unit.Id,
+                    IsActive = true
                 });
             }
 
