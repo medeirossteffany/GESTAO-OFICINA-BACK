@@ -148,7 +148,8 @@ namespace GestaoOficina.Features.Users
 
             _context.Users.Update(user);
             await _context.SaveChangesAsync();
-            return user;
+
+            return await GetUserByIdAsync(userId);
         }
 
         public async Task<User?> UpdateUserAsync(int userId, UpdateUserRequest dto)

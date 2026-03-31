@@ -9,7 +9,7 @@ namespace GestaoOficina.Controllers
 {
     [ApiController]
     [Route("api/[controller]")]
-    [Authorize(Roles = "Admin")]
+    [Authorize]
     public class UsersController : ControllerBase
     {
         private readonly UserService _service;
@@ -19,6 +19,7 @@ namespace GestaoOficina.Controllers
         }
 
         [HttpGet]
+        [Authorize(Roles = "Admin")]
         public async Task<ActionResult<List<UserResponse>>> GetAllUsers()
         {
             var loggedUserIdStr = User.FindFirstValue(ClaimTypes.NameIdentifier);
@@ -55,6 +56,7 @@ namespace GestaoOficina.Controllers
         }
 
         [HttpPost]
+        [Authorize(Roles = "Admin")]
         public async Task<ActionResult<UserResponse>> CreateUser(CreateUserRequest dto)
         {
             var loggedUserIdStr = User.FindFirstValue(ClaimTypes.NameIdentifier);
@@ -99,6 +101,7 @@ namespace GestaoOficina.Controllers
         }
 
         [HttpPatch("{id}")]
+        [Authorize(Roles = "Admin")]
         public async Task<ActionResult<UserResponse>> UpdateUser(int id, UpdateUserRequest dto)
         {
             var loggedUserIdStr = User.FindFirstValue(ClaimTypes.NameIdentifier);
@@ -150,6 +153,7 @@ namespace GestaoOficina.Controllers
         }
 
         [HttpDelete("{id}")]
+        [Authorize(Roles = "Admin")]
         public async Task<ActionResult> DeleteUser(int id)
         {
             var loggedUserIdStr = User.FindFirstValue(ClaimTypes.NameIdentifier);
@@ -175,9 +179,7 @@ namespace GestaoOficina.Controllers
         }
 
         [HttpGet("me")]
-        [AllowAnonymous]
-        [Authorize]
-        public async Task<ActionResult<User>> GetMyProfile()
+        public async Task<ActionResult<UserResponse>> GetMyProfile()
         {
             var userIdStr = User.FindFirstValue(ClaimTypes.NameIdentifier);
             if (!int.TryParse(userIdStr, out var userId))
@@ -187,13 +189,32 @@ namespace GestaoOficina.Controllers
             if (user == null)
                 return NotFound();
 
-            return Ok(user);
+            var response = new UserResponse
+            {
+                Id = user.Id,
+                TenantId = user.TenantId,
+                Name = user.Name,
+                Email = user.Email,
+                PhoneNumber = user.PhoneNumber,
+                CpfCnpj = user.CpfCnpj,
+                AddressZip = user.AddressZip,
+                AddressStreet = user.AddressStreet,
+                AddressNumber = user.AddressNumber,
+                AddressDistrict = user.AddressDistrict,
+                AddressCity = user.AddressCity,
+                AddressState = user.AddressState,
+                Role = user.Role,
+                IsActive = user.IsActive,
+                FullAccess = user.FullAccess,
+                CreatedAt = user.CreatedAt,
+                UnitIds = user.UserUnits?.Where(uu => uu.IsActive).Select(uu => uu.UnitId).ToList()
+            };
+
+            return Ok(response);
         }
 
         [HttpPatch("me")]
-        [AllowAnonymous]
-        [Authorize]
-        public async Task<ActionResult<User>> UpdateMyProfile(UpdateUserProfileRequest dto)
+        public async Task<ActionResult<UserResponse>> UpdateMyProfile(UpdateUserProfileRequest dto)
         {
             var userIdStr = User.FindFirstValue(ClaimTypes.NameIdentifier);
             if (!int.TryParse(userIdStr, out var userId))
@@ -203,7 +224,28 @@ namespace GestaoOficina.Controllers
             if (user == null)
                 return NotFound();
 
-            return Ok(user);
+            var response = new UserResponse
+            {
+                Id = user.Id,
+                TenantId = user.TenantId,
+                Name = user.Name,
+                Email = user.Email,
+                PhoneNumber = user.PhoneNumber,
+                CpfCnpj = user.CpfCnpj,
+                AddressZip = user.AddressZip,
+                AddressStreet = user.AddressStreet,
+                AddressNumber = user.AddressNumber,
+                AddressDistrict = user.AddressDistrict,
+                AddressCity = user.AddressCity,
+                AddressState = user.AddressState,
+                Role = user.Role,
+                IsActive = user.IsActive,
+                FullAccess = user.FullAccess,
+                CreatedAt = user.CreatedAt,
+                UnitIds = user.UserUnits?.Where(uu => uu.IsActive).Select(uu => uu.UnitId).ToList()
+            };
+
+            return Ok(response);
         }
     }
 }

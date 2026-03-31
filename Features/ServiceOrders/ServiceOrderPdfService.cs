@@ -60,6 +60,33 @@ namespace GestaoOficina.Features.ServiceOrders
             var partsValue = parts.Sum(p => p.TotalPrice);
             var totalAmount = so.TotalAmount;
 
+            var vinRowHtml = !string.IsNullOrWhiteSpace(so.Vehicle?.Vin)
+                ? $$"""
+      <div class="customer-row">
+        <div class="customer-label">VIN:</div>
+        <div class="customer-value">{{Safe(so.Vehicle?.Vin)}}</div>
+      </div>
+"""
+                : string.Empty;
+
+            var renavamRowHtml = !string.IsNullOrWhiteSpace(so.Vehicle?.Renavam)
+                ? $$"""
+      <div class="customer-row">
+        <div class="customer-label">Renavam:</div>
+        <div class="customer-value">{{Safe(so.Vehicle?.Renavam)}}</div>
+      </div>
+"""
+                : string.Empty;
+
+            var insuranceClaimRowHtml = !string.IsNullOrWhiteSpace(so.Vehicle?.InsuranceClaimNumber)
+                ? $$"""
+      <div class="customer-row">
+        <div class="customer-label">Sinistro:</div>
+        <div class="customer-value">{{Safe(so.Vehicle?.InsuranceClaimNumber)}}</div>
+      </div>
+"""
+                : string.Empty;
+
             var partsHtml = new StringBuilder();
             if (parts.Count > 0)
             {
@@ -385,6 +412,9 @@ namespace GestaoOficina.Features.ServiceOrders
         <div class="customer-label">Veículo:</div>
         <div class="customer-value">{{vehicleLabel}}</div>
       </div>
+      {{vinRowHtml}}
+      {{renavamRowHtml}}
+      {{insuranceClaimRowHtml}}
     </div>
 
     <div class="service-section">
