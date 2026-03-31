@@ -40,7 +40,7 @@ namespace GestaoOficina.Features.ServiceOrders
             {
                 Format = "A4",
                 PrintBackground = true,
-                Margin = new Margin { Top = "24px", Right = "28px", Bottom = "28px", Left = "28px" }
+                Margin = new Margin { Top = "20px", Right = "20px", Bottom = "20px", Left = "20px" }
             });
         }
 
@@ -52,20 +52,55 @@ namespace GestaoOficina.Features.ServiceOrders
 
             var unitAddress = $"{Safe(so.Unit?.AddressStreet)}, {Safe(so.Unit?.AddressNumber)} - {Safe(so.Unit?.AddressDistrict)} - {Safe(so.Unit?.AddressCity)}/{Safe(so.Unit?.AddressState)}";
             var unitContact = $"Fone: {Safe(so.Unit?.Phone)}";
+            var unitEmail = Safe(so.Unit?.Email);
+            var footerCity = Safe(so.Unit?.AddressCity);
             var vehicleLabel = Safe(so.Vehicle?.Model ?? so.Vehicle?.Plate);
+            var bodyworkValue = so.BodyworkValue;
+            var paintValue = so.PaintValue;
+            var partsValue = parts.Sum(p => p.TotalPrice);
+            var totalAmount = so.TotalAmount;
 
             var partsHtml = new StringBuilder();
-            if (parts.Count == 0)
+            if (parts.Count > 0)
             {
-                partsHtml.AppendLine("<div>-</div>");
-            }
-            else
-            {
+                partsHtml.AppendLine("<tbody>");
                 foreach (var part in parts)
                 {
-                    partsHtml.AppendLine($"""<div>{Safe(part.Description)} <span class="money">{Money(part.TotalPrice)}</span></div>""");
+                    partsHtml.AppendLine($"""
+                        <tr>
+                            <td class="parts-description">{Safe(part.Description)}</td>
+                            <td class="parts-value">{Money(part.TotalPrice)}</td>
+                        </tr>
+                        """);
                 }
+                partsHtml.AppendLine("</tbody>");
             }
+
+            var partsSectionHtml = parts.Count > 0
+                ? $$"""
+    <div class="service-section">
+      <div class="section-header">Peças</div>
+      <div class="section-content">
+        <table class="parts-table">
+          {{partsHtml}}
+        </table>
+        <div class="value-row" style="margin-top: 8px;">
+          <span class="value-label">Subtotal Peças:</span>
+          <span class="value-amount">R$ {{Money(partsValue)}}</span>
+        </div>
+      </div>
+    </div>
+"""
+                : string.Empty;
+
+            var partsSummaryRowHtml = parts.Count > 0
+                ? $$"""
+      <div class="summary-row subtotal">
+        <span class="summary-label">Peças:</span>
+        <span class="summary-value">R$ {{Money(partsValue)}}</span>
+      </div>
+"""
+                : string.Empty;
 
             return $$"""
 <!DOCTYPE html>
@@ -73,62 +108,328 @@ namespace GestaoOficina.Features.ServiceOrders
 <head>
   <meta charset="utf-8" />
   <style>
-    body { font-family: "Times New Roman", serif; color: #000; font-size: 13px; line-height: 1.25; }
-    .page { width: 100%; }
-    .center { text-align: center; }
-    .header-title { font-size: 30px; font-weight: 700; margin-top: 8px; }
-    .header-line { margin: 12px auto 16px auto; width: 78%; border-bottom: 1px solid #333; }
-    .top-info { margin-bottom: 22px; font-size: 20px; font-weight: 700; }
-    .section { margin-top: 14px; }
-    .section-title { font-size: 35px; font-weight: 700; margin-bottom: 2px; }
-    .money { color: #d40000; }
-    .spacer { height: 130px; }
-    .total-row { display: flex; align-items: center; margin-top: 6px; font-size: 30px; }
-    .total-label { white-space: nowrap; }
-    .total-line { flex: 1; border-bottom: 1px solid #333; margin: 0 10px; transform: translateY(-4px); }
-    .total-value { white-space: nowrap; }
-    .footer-date { margin-top: 40px; font-size: 12px; }
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    body {
+      font-family: 'Segoe UI', 'Roboto', 'Helvetica Neue', sans-serif;
+      color: #2c3e50;
+      font-size: 11px;
+      line-height: 1.4;
+      background-color: #fff;
+    }
+
+    .page {
+      width: 100%;
+      background-color: #fff;
+    }
+
+    .header {
+      border-bottom: 3px solid #1a5490;
+      padding-bottom: 16px;
+      margin-bottom: 20px;
+    }
+
+    .header-company {
+      text-align: center;
+      margin-bottom: 8px;
+    }
+
+    .company-name {
+      font-size: 20px;
+      font-weight: 700;
+      color: #1a5490;
+      margin-bottom: 2px;
+    }
+
+    .company-cnpj {
+      font-size: 12px;
+      color: #555;
+      font-weight: 500;
+    }
+
+    .company-info {
+      text-align: center;
+      font-size: 11px;
+      color: #666;
+      line-height: 1.3;
+      margin-bottom: 6px;
+    }
+
+    .company-contact {
+      text-align: center;
+      font-size: 11px;
+      color: #666;
+    }
+
+    .customer-section {
+      background-color: #f8f9fa;
+      border: 1px solid #dee2e6;
+      border-radius: 4px;
+      padding: 12px;
+      margin-bottom: 16px;
+    }
+
+    .customer-row {
+      display: flex;
+      margin-bottom: 4px;
+      font-size: 11px;
+    }
+
+    .customer-row:last-child {
+      margin-bottom: 0;
+    }
+
+    .customer-label {
+      font-weight: 600;
+      color: #1a5490;
+      min-width: 60px;
+      margin-right: 8px;
+    }
+
+    .customer-value {
+      color: #2c3e50;
+      flex: 1;
+    }
+
+    .service-section {
+      margin-bottom: 16px;
+      border: 1px solid #dee2e6;
+      border-radius: 4px;
+      overflow: hidden;
+    }
+
+    .section-header {
+      background-color: #1a5490;
+      color: #fff;
+      padding: 10px 12px;
+      font-weight: 700;
+      font-size: 12px;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+
+    .section-content {
+      padding: 12px;
+    }
+
+    .description-text {
+      color: #2c3e50;
+      margin-bottom: 6px;
+      font-size: 11px;
+      line-height: 1.4;
+      min-height: 20px;
+    }
+
+    .value-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding-top: 6px;
+      border-top: 1px solid #dee2e6;
+      font-weight: 600;
+    }
+
+    .value-label {
+      color: #555;
+      font-size: 10px;
+    }
+
+    .value-amount {
+      color: #d40000;
+      font-size: 12px;
+    }
+
+    .parts-table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 11px;
+    }
+
+    .parts-table tbody tr {
+      border-bottom: 1px solid #dee2e6;
+    }
+
+    .parts-table tbody tr:last-child {
+      border-bottom: none;
+    }
+
+    .parts-table tbody tr:nth-child(even) {
+      background-color: #f8f9fa;
+    }
+
+    .parts-description {
+      padding: 8px 12px;
+      text-align: left;
+      color: #2c3e50;
+    }
+
+    .parts-value {
+      padding: 8px 12px;
+      text-align: right;
+      color: #d40000;
+      font-weight: 600;
+      width: 80px;
+    }
+
+    .summary-section {
+      margin-top: 20px;
+      margin-bottom: 16px;
+      border: 1px solid #dee2e6;
+      border-radius: 4px;
+      overflow: hidden;
+    }
+
+    .summary-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 10px 12px;
+      border-bottom: 1px solid #dee2e6;
+      font-size: 11px;
+    }
+
+    .summary-row:last-child {
+      border-bottom: none;
+    }
+
+    .summary-row.subtotal {
+      background-color: #f8f9fa;
+    }
+
+    .summary-row.total {
+      background-color: #1a5490;
+      color: #fff;
+      font-weight: 700;
+      font-size: 13px;
+    }
+
+    .summary-label {
+      font-weight: 600;
+    }
+
+    .summary-value {
+      text-align: right;
+      font-weight: 600;
+    }
+
+    .summary-row.total .summary-value {
+      color: #fff;
+    }
+
+    .footer {
+      margin-top: 30px;
+      padding-top: 12px;
+      border-top: 1px solid #dee2e6;
+      text-align: center;
+      font-size: 10px;
+      color: #666;
+    }
+
+    .footer-date {
+      margin-bottom: 4px;
+    }
+
+    .footer-signature {
+      margin-top: 20px;
+      display: flex;
+      justify-content: space-around;
+    }
+
+    .signature-line {
+      width: 120px;
+      text-align: center;
+    }
+
+    .signature-space {
+      border-top: 1px solid #333;
+      height: 40px;
+      margin-bottom: 4px;
+    }
+
+    .signature-label {
+      font-size: 9px;
+      color: #555;
+    }
   </style>
 </head>
 <body>
   <div class="page">
-    <div class="center">
-      <div class="header-title">{{Safe(so.Unit?.Name)}} CNPJ:{{Safe(so.Unit?.Cnpj)}}</div>
-      <div>Av: {{unitAddress}} - São Paulo-SP {{unitContact}}</div>
-      <div>{{Safe(so.Unit?.Email)}}</div>
-      <div class="header-line"></div>
+    <div class="header">
+      <div class="header-company">
+        <div class="company-name">{{Safe(so.Unit?.Name)}}</div>
+        <div class="company-cnpj">CNPJ: {{Safe(so.Unit?.Cnpj)}}</div>
+      </div>
+      <div class="company-info">
+        {{unitAddress}}<br>
+        {{unitContact}}
+      </div>
+      <div class="company-contact">
+        {{unitEmail}}
+      </div>
     </div>
 
-    <div class="top-info">
-      Nome: {{Safe(so.OwnerCustomer?.Name)}} Placa: {{Safe(so.Vehicle?.Plate)}} Veículo: {{vehicleLabel}}
+    <div class="customer-section">
+      <div class="customer-row">
+        <div class="customer-label">Cliente:</div>
+        <div class="customer-value">{{Safe(so.OwnerCustomer?.Name)}}</div>
+      </div>
+      <div class="customer-row">
+        <div class="customer-label">Placa:</div>
+        <div class="customer-value">{{Safe(so.Vehicle?.Plate)}}</div>
+      </div>
+      <div class="customer-row">
+        <div class="customer-label">Veículo:</div>
+        <div class="customer-value">{{vehicleLabel}}</div>
+      </div>
     </div>
 
-    <div class="section">
-      <div class="section-title">FUNILARIA:</div>
-      <div>{{Safe(so.BodyworkDescription)}}</div>
-      <div><span class="money">Valor: {{Money(so.BodyworkValue)}}</span></div>
+    <div class="service-section">
+      <div class="section-header">Funilaria</div>
+      <div class="section-content">
+        <div class="description-text">{{Safe(so.BodyworkDescription)}}</div>
+        <div class="value-row">
+          <span class="value-label">Valor:</span>
+          <span class="value-amount">R$ {{Money(bodyworkValue)}}</span>
+        </div>
+      </div>
     </div>
 
-    <div class="section">
-      <div class="section-title">PINTURA:</div>
-      <div>{{Safe(so.PaintDescription)}}</div>
-      <div><span class="money">Valor: {{Money(so.PaintValue)}}</span></div>
+    <div class="service-section">
+      <div class="section-header">Pintura</div>
+      <div class="section-content">
+        <div class="description-text">{{Safe(so.PaintDescription)}}</div>
+        <div class="value-row">
+          <span class="value-label">Valor:</span>
+          <span class="value-amount">R$ {{Money(paintValue)}}</span>
+        </div>
+      </div>
     </div>
 
-    <div class="section">
-      <div class="section-title">PEÇAS:</div>
-      {{partsHtml}}
+    {{partsSectionHtml}}
+
+    <div class="summary-section">
+      <div class="summary-row subtotal">
+        <span class="summary-label">Funilaria:</span>
+        <span class="summary-value">R$ {{Money(bodyworkValue)}}</span>
+      </div>
+      <div class="summary-row subtotal">
+        <span class="summary-label">Pintura:</span>
+        <span class="summary-value">R$ {{Money(paintValue)}}</span>
+      </div>
+      {{partsSummaryRowHtml}}
+      <div class="summary-row total">
+        <span class="summary-label">VALOR TOTAL:</span>
+        <span class="summary-value">R$ {{Money(totalAmount)}}</span>
+      </div>
     </div>
 
-    <div class="spacer"></div>
-
-    <div class="total-row">
-      <div class="total-label">Valor Total</div>
-      <div class="total-line"></div>
-      <div class="total-value">{{Money(so.TotalAmount)}}</div>
+    <div class="footer">
+      <div class="footer-date">{{footerCity}}, {{Date(DateTime.Now)}}</div>
     </div>
-
-    <div class="footer-date">São Paulo {{Date(DateTime.Now)}}</div>
   </div>
 </body>
 </html>
