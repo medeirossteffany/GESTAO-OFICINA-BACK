@@ -146,6 +146,13 @@ namespace GestaoOficina.Controllers
             return File(pdfBytes, "application/pdf", $"os-{serviceOrder.Id}.pdf");
         }
 
+        [HttpPatch("{id}/status/enviado")]
+        [Authorize]
+        public async Task<IActionResult> MarkAsEnviado(int id)
+        {
+            return await ChangeStatus(id, "ENVIADO");
+        }
+
         [HttpPatch("{id}/status/feito")]
         [Authorize]
         public async Task<IActionResult> MarkAsFeito(int id)
@@ -208,7 +215,18 @@ namespace GestaoOficina.Controllers
                 so.PartsValue,
                 so.TotalAmount,
                 so.CreatedAt,
-                so.UpdatedAt
+                so.UpdatedAt,
+                Parts = so.Parts
+                    .Where(p => p.IsActive)
+                    .Select(p => new
+                    {
+                        p.Id,
+                        p.Description,
+                        p.Quantity,
+                        p.UnitPrice,
+                        p.TotalPrice
+                    })
+                    .ToList()
             };
         }
     }

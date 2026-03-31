@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Generic;
 
 namespace GestaoOficina.Entities
 {
@@ -28,5 +29,6 @@ namespace GestaoOficina.Entities
         public Vehicle Vehicle { get; set; }
         public Customer OwnerCustomer { get; set; }
         public ServiceOrderStatus Status { get; set; }
+        public ICollection<ServiceOrderPart> Parts { get; set; } = [];
     }
 }

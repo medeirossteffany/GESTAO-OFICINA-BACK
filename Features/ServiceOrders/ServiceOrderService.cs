@@ -21,6 +21,7 @@ namespace GestaoOficina.Features.ServiceOrders
                 .Include(so => so.Vehicle)
                 .Include(so => so.OwnerCustomer)
                 .Include(so => so.Status)
+                .Include(so => so.Parts.Where(p => p.IsActive))
                 .Where(so => so.TenantId == tenantId)
                 .Where(so => so.IsActive)
                 .Where(so => fullAccess || unitIds.Contains(so.UnitId))
@@ -35,6 +36,7 @@ namespace GestaoOficina.Features.ServiceOrders
                 .Include(so => so.Vehicle)
                 .Include(so => so.OwnerCustomer)
                 .Include(so => so.Status)
+                .Include(so => so.Parts.Where(p => p.IsActive))
                 .FirstOrDefaultAsync(so => so.Id == id && so.IsActive);
         }
 
@@ -341,16 +343,20 @@ namespace GestaoOficina.Features.ServiceOrders
             if (!HasAccess(serviceOrder, tenantId, unitIds, fullAccess))
                 throw new UnauthorizedAccessException("Usuário sem acesso à OS.");
 
+            targetStatusCode = targetStatusCode.Trim().ToUpperInvariant();
+
             var targetStatus = await _context.ServiceOrderStatuses
                 .FirstOrDefaultAsync(s => s.Code == targetStatusCode);
 
             if (targetStatus == null)
                 throw new InvalidOperationException("Status inválido.");
 
-            var currentCode = serviceOrder.Status?.Code;
+            var currentCode = serviceOrder.Status?.Code?.ToUpperInvariant();
             var allowed =
                 (currentCode == "ENVIADO" && targetStatusCode == "FEITO") ||
-                (currentCode == "FEITO" && targetStatusCode == "FINALIZADO");
+                (currentCode == "FEITO" && targetStatusCode == "FINALIZADO") ||
+                (currentCode == "FEITO" && targetStatusCode == "ENVIADO") ||
+                (currentCode == "FINALIZADO" && targetStatusCode == "ENVIADO");
 
             if (!allowed)
                 throw new InvalidOperationException($"Transição inválida: {currentCode} -> {targetStatusCode}.");
@@ -359,8 +365,12 @@ namespace GestaoOficina.Features.ServiceOrders
             var oldStatusId = serviceOrder.StatusId;
 
             serviceOrder.StatusId = targetStatus.Id;
+
             if (targetStatusCode == "FINALIZADO" && serviceOrder.DeliveryDate is null)
                 serviceOrder.DeliveryDate = now;
+
+            if (currentCode == "FINALIZADO" && targetStatusCode != "FINALIZADO")
+                serviceOrder.DeliveryDate = null;
 
             serviceOrder.UpdatedAt = now;
 
