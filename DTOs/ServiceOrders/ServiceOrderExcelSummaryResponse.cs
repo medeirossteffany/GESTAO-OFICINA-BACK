@@ -25,7 +25,6 @@ namespace GestaoOficina.DTOs.ServiceOrders
 
     public class ServiceOrderExcelServiceItemResponse
     {
-        public DateTime? DataLcto { get; set; }
         public string TpServico { get; set; } = string.Empty;
         public decimal Valor { get; set; }
         public string Fornecedor { get; set; } = string.Empty;

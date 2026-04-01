@@ -27,7 +27,7 @@ namespace GestaoOficina.Controllers
         }
 
         [HttpPost("import/excel/resumo")]
-        public async Task<IActionResult> ImportExcelResumoPorLoja([FromForm] IFormFile file)
+        public async Task<IActionResult> ImportExcelResumoPorLoja([FromForm(Name = "file")] IFormFile file)
         {
             if (file is null || file.Length == 0)
                 return BadRequest(new { message = "Arquivo não enviado." });
