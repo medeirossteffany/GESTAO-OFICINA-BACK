@@ -226,7 +226,9 @@ namespace GestaoOficina.Controllers
                         p.UnitPrice,
                         p.TotalPrice
                     })
-                    .ToList()
+                    .ToList(),
+                so.MechanicsDescription,
+                so.MechanicsValue,
             };
         }
     }

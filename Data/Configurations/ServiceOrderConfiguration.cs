@@ -12,26 +12,18 @@ namespace GestaoOficina.Data.Configurations
             builder.Property(so => so.EntryDate).IsRequired();
             builder.Property(so => so.BodyworkValue).HasDefaultValue(0);
             builder.Property(so => so.PaintValue).HasDefaultValue(0);
+            builder.Property(so => so.MechanicsValue).HasDefaultValue(0);
             builder.Property(so => so.PartsValue).HasDefaultValue(0);
             builder.Property(so => so.TotalAmount).IsRequired();
             builder.Property(so => so.IsActive).IsRequired().HasDefaultValue(true);
             builder.Property(so => so.CreatedAt).IsRequired();
             builder.Property(so => so.UpdatedAt).IsRequired();
-            builder.HasOne(so => so.Tenant)
-                .WithMany(t => t.ServiceOrders)
-                .HasForeignKey(so => so.TenantId);
-            builder.HasOne(so => so.Unit)
-                .WithMany(u => u.ServiceOrders)
-                .HasForeignKey(so => so.UnitId);
-            builder.HasOne(so => so.Vehicle)
-                .WithMany()
-                .HasForeignKey(so => so.VehicleId);
-            builder.HasOne(so => so.OwnerCustomer)
-                .WithMany()
-                .HasForeignKey(so => so.OwnerCustomerId);
-            builder.HasOne(so => so.Status)
-                .WithMany()
-                .HasForeignKey(so => so.StatusId);
+
+            builder.HasOne(so => so.Tenant).WithMany(t => t.ServiceOrders).HasForeignKey(so => so.TenantId);
+            builder.HasOne(so => so.Unit).WithMany(u => u.ServiceOrders).HasForeignKey(so => so.UnitId);
+            builder.HasOne(so => so.Vehicle).WithMany().HasForeignKey(so => so.VehicleId);
+            builder.HasOne(so => so.OwnerCustomer).WithMany().HasForeignKey(so => so.OwnerCustomerId);
+            builder.HasOne(so => so.Status).WithMany().HasForeignKey(so => so.StatusId);
         }
     }
 }

@@ -102,13 +102,17 @@ namespace GestaoOficina.Features.ServiceOrders
             var now = DateTime.UtcNow;
             var bodyworkValue = dto.BodyworkValue ?? 0m;
             var paintValue = dto.PaintValue ?? 0m;
+            var mechanicsValue = dto.MechanicsValue ?? 0m;
             var partsValue = dto.Parts?.Sum(p => p.Quantity * p.UnitPrice) ?? 0m;
-            var totalAmount = bodyworkValue + paintValue + partsValue;
 
-            if (totalAmount < 0)
-            {
-                totalAmount = 0;
-            }
+            ValidateServiceComposition(
+                dto.BodyworkDescription, dto.BodyworkValue,
+                dto.PaintDescription, dto.PaintValue,
+                dto.MechanicsDescription, dto.MechanicsValue,
+                dto.Parts is { Count: > 0 });
+
+            var totalAmount = bodyworkValue + paintValue + mechanicsValue + partsValue;
+            if (totalAmount < 0) totalAmount = 0;
 
             await using var transaction = await _context.Database.BeginTransactionAsync();
 
@@ -125,6 +129,8 @@ namespace GestaoOficina.Features.ServiceOrders
                 BodyworkValue = bodyworkValue,
                 PaintDescription = dto.PaintDescription,
                 PaintValue = paintValue,
+                MechanicsDescription = dto.MechanicsDescription,
+                MechanicsValue = mechanicsValue,
                 PartsValue = partsValue,
                 TotalAmount = totalAmount,
                 IsActive = true,
@@ -233,20 +239,29 @@ namespace GestaoOficina.Features.ServiceOrders
 
             var now = DateTime.UtcNow;
 
-            var partsValue = serviceOrder.PartsValue;
-            if (dto.Parts is not null)
-            {
-                partsValue = dto.Parts.Sum(p => p.Quantity * p.UnitPrice);
-            }
-
+            var bodyworkDescription = dto.BodyworkDescription ?? serviceOrder.BodyworkDescription;
             var bodyworkValue = dto.BodyworkValue ?? serviceOrder.BodyworkValue;
-            var paintValue = dto.PaintValue ?? serviceOrder.PaintValue;
-            var totalAmount = bodyworkValue + paintValue + partsValue;
 
-            if (totalAmount < 0)
-            {
-                totalAmount = 0;
-            }
+            var paintDescription = dto.PaintDescription ?? serviceOrder.PaintDescription;
+            var paintValue = dto.PaintValue ?? serviceOrder.PaintValue;
+
+            var mechanicsDescription = dto.MechanicsDescription ?? serviceOrder.MechanicsDescription;
+            var mechanicsValue = dto.MechanicsValue ?? serviceOrder.MechanicsValue;
+
+            var partsValue = dto.Parts is not null
+                ? dto.Parts.Sum(p => p.Quantity * p.UnitPrice)
+                : serviceOrder.PartsValue;
+
+            var hasParts = dto.Parts is not null ? dto.Parts.Count > 0 : serviceOrder.PartsValue > 0m;
+
+            ValidateServiceComposition(
+                bodyworkDescription, bodyworkValue,
+                paintDescription, paintValue,
+                mechanicsDescription, mechanicsValue,
+                hasParts);
+
+            var totalAmount = bodyworkValue + paintValue + mechanicsValue + partsValue;
+            if (totalAmount < 0) totalAmount = 0;
 
             var oldStatusId = serviceOrder.StatusId;
             var statusChanged = dto.StatusId.HasValue && dto.StatusId.Value != oldStatusId;
@@ -259,10 +274,12 @@ namespace GestaoOficina.Features.ServiceOrders
             if (dto.EntryDate.HasValue) serviceOrder.EntryDate = dto.EntryDate.Value;
             if (dto.EstimatedDeliveryDate is not null) serviceOrder.EstimatedDeliveryDate = dto.EstimatedDeliveryDate;
             if (dto.DeliveryDate is not null) serviceOrder.DeliveryDate = dto.DeliveryDate;
-            if (dto.BodyworkDescription is not null) serviceOrder.BodyworkDescription = dto.BodyworkDescription;
+            serviceOrder.BodyworkDescription = bodyworkDescription;
             serviceOrder.BodyworkValue = bodyworkValue;
-            if (dto.PaintDescription is not null) serviceOrder.PaintDescription = dto.PaintDescription;
+            serviceOrder.PaintDescription = paintDescription;
             serviceOrder.PaintValue = paintValue;
+            serviceOrder.MechanicsDescription = mechanicsDescription;
+            serviceOrder.MechanicsValue = mechanicsValue;
             serviceOrder.PartsValue = partsValue;
             serviceOrder.TotalAmount = totalAmount;
             serviceOrder.UpdatedAt = now;
@@ -434,6 +451,38 @@ namespace GestaoOficina.Features.ServiceOrders
 
             await _context.SaveChangesAsync();
             return true;
+        }
+
+        private static void ValidateServiceComposition(
+            string? bodyworkDescription, decimal? bodyworkValue,
+            string? paintDescription, decimal? paintValue,
+            string? mechanicsDescription, decimal? mechanicsValue,
+            bool hasParts)
+        {
+            var hasBodyworkDescription = !string.IsNullOrWhiteSpace(bodyworkDescription);
+            var hasBodyworkValue = bodyworkValue is > 0;
+
+            var hasPaintDescription = !string.IsNullOrWhiteSpace(paintDescription);
+            var hasPaintValue = paintValue is > 0;
+
+            var hasMechanicsDescription = !string.IsNullOrWhiteSpace(mechanicsDescription);
+            var hasMechanicsValue = mechanicsValue is > 0;
+
+            if (hasBodyworkDescription != hasBodyworkValue)
+                throw new InvalidOperationException("Funilaria deve informar descrição e valor juntos.");
+
+            if (hasPaintDescription != hasPaintValue)
+                throw new InvalidOperationException("Pintura deve informar descrição e valor juntos.");
+
+            if (hasMechanicsDescription != hasMechanicsValue)
+                throw new InvalidOperationException("Mecânica deve informar descrição e valor juntos.");
+
+            var hasBodyworkComplete = hasBodyworkDescription && hasBodyworkValue;
+            var hasPaintComplete = hasPaintDescription && hasPaintValue;
+            var hasMechanicsComplete = hasMechanicsDescription && hasMechanicsValue;
+
+            if (!hasBodyworkComplete && !hasPaintComplete && !hasMechanicsComplete && !hasParts)
+                throw new InvalidOperationException("Informe ao menos: funilaria completa, pintura completa, mecânica completa, ou pelo menos uma peça.");
         }
     }
 }

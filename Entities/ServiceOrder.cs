@@ -14,10 +14,16 @@ namespace GestaoOficina.Entities
         public DateTime EntryDate { get; set; }
         public DateTime? EstimatedDeliveryDate { get; set; }
         public DateTime? DeliveryDate { get; set; }
+
         public string? BodyworkDescription { get; set; }
         public decimal BodyworkValue { get; set; }
+
         public string? PaintDescription { get; set; }
         public decimal PaintValue { get; set; }
+
+        public string? MechanicsDescription { get; set; }
+        public decimal MechanicsValue { get; set; }
+
         public decimal PartsValue { get; set; }
         public decimal TotalAmount { get; set; }
         public bool IsActive { get; set; }

@@ -17,6 +17,9 @@
         public string? PaintDescription { get; set; }
         public decimal? PaintValue { get; set; }
 
+        public string? MechanicsDescription { get; set; }
+        public decimal? MechanicsValue { get; set; }
+
         public List<CreateServiceOrderPartItemRequest>? Parts { get; set; }
     }
 }
