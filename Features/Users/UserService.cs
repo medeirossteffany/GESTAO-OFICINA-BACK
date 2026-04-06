@@ -168,7 +168,7 @@ namespace GestaoOficina.Features.Users
         public async Task<User?> UpdateUserAsync(int userId, UpdateUserRequest dto)
         {
             var user = await _context.Users
-                .Include(u => u.UserUnits) // importante: carregar ativos + inativos
+                .Include(u => u.UserUnits) 
                 .FirstOrDefaultAsync(u => u.Id == userId && u.IsActive);
 
             if (user == null) return null;

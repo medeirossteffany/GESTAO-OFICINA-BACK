@@ -22,7 +22,7 @@ namespace GestaoOficina.Features.Customers
         {
             var query = _context.Customers
                 .Where(c => c.TenantId == tenantId && c.IsActive)
-                .Where(c => c.CustomerUnits.Any(cu => cu.IsActive)) // garante vínculo ativo
+                .Where(c => c.CustomerUnits.Any(cu => cu.IsActive)) 
                 .Where(c => fullAccess || c.CustomerUnits.Any(cu => cu.IsActive && unitIds.Contains(cu.UnitId)))
                 .Include(c => c.CustomerUnits.Where(cu => cu.IsActive))
                 .AsQueryable();
@@ -299,7 +299,7 @@ namespace GestaoOficina.Features.Customers
         public bool HasAccessToCustomer(Customer customer, int tenantId, List<int> unitIds, bool fullAccess)
         {
             if (customer.TenantId != tenantId || !customer.IsActive) return false;
-            if (!customer.CustomerUnits.Any(cu => cu.IsActive)) return false; // sem vínculo ativo => sem acesso
+            if (!customer.CustomerUnits.Any(cu => cu.IsActive)) return false; 
             if (fullAccess) return true;
 
             return customer.CustomerUnits.Any(cu => cu.IsActive && unitIds.Contains(cu.UnitId));

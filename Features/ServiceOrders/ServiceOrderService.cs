@@ -28,7 +28,7 @@ namespace GestaoOficina.Features.ServiceOrders
                 .Include(so => so.Parts.Where(p => p.IsActive))
                 .Where(so => so.TenantId == tenantId)
                 .Where(so => so.IsActive)
-                .Where(so => so.OwnerCustomer.IsActive) // novo
+                .Where(so => so.OwnerCustomer.IsActive) 
                 .Where(so => fullAccess || unitIds.Contains(so.UnitId))
                 .Where(so => !filterUnitId.HasValue || so.UnitId == filterUnitId.Value)
                 .OrderByDescending(so => so.CreatedAt)
