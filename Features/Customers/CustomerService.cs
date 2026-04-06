@@ -14,12 +14,25 @@ namespace GestaoOficina.Features.Customers
             _context = context;
         }
 
-        public async Task<List<Customer>> GetCustomersByTenantAndUnits(int tenantId, List<int> unitIds, bool fullAccess)
+        public async Task<List<Customer>> GetCustomersByTenantAndUnits(
+            int tenantId,
+            List<int> unitIds,
+            bool fullAccess,
+            int? selectedUnitId = null)
         {
-            return await _context.Customers
+            var query = _context.Customers
                 .Where(c => c.TenantId == tenantId && c.IsActive)
+                .Where(c => c.CustomerUnits.Any(cu => cu.IsActive)) // garante vínculo ativo
                 .Where(c => fullAccess || c.CustomerUnits.Any(cu => cu.IsActive && unitIds.Contains(cu.UnitId)))
                 .Include(c => c.CustomerUnits.Where(cu => cu.IsActive))
+                .AsQueryable();
+
+            if (selectedUnitId.HasValue)
+            {
+                query = query.Where(c => c.CustomerUnits.Any(cu => cu.IsActive && cu.UnitId == selectedUnitId.Value));
+            }
+
+            return await query
                 .OrderBy(c => c.Name)
                 .ToListAsync();
         }
@@ -28,11 +41,22 @@ namespace GestaoOficina.Features.Customers
         {
             return await _context.Customers
                 .Include(c => c.CustomerUnits.Where(cu => cu.IsActive))
-                .FirstOrDefaultAsync(c => c.Id == id && c.IsActive);
+                .FirstOrDefaultAsync(c => c.Id == id && c.IsActive && c.CustomerUnits.Any(cu => cu.IsActive));
         }
 
-        public async Task<(Customer Customer, bool CreatedNew)> CreateOrLinkCustomer(CreateCustomerRequest dto, int tenantId)
+        public async Task<(Customer Customer, bool CreatedNew)> CreateOrLinkCustomer(
+            CreateCustomerRequest dto,
+            int tenantId,
+            List<int> targetUnitIds)
         {
+            targetUnitIds = targetUnitIds
+                .Where(id => id > 0)
+                .Distinct()
+                .ToList();
+
+            if (targetUnitIds.Count == 0)
+                throw new InvalidOperationException("Informe ao menos uma loja.");
+
             var legalTypeExists = await _context.CustomerLegalTypes
                 .AnyAsync(lt => lt.Id == dto.LegalTypeId);
 
@@ -41,12 +65,14 @@ namespace GestaoOficina.Features.Customers
                 throw new InvalidOperationException("Tipo legal do cliente inválido.");
             }
 
-            var unitExistsInTenant = await _context.Units
-                .AnyAsync(u => u.Id == dto.UnitId && u.TenantId == tenantId && u.IsActive);
+            var validUnitIds = await _context.Units
+                .Where(u => targetUnitIds.Contains(u.Id) && u.TenantId == tenantId && u.IsActive)
+                .Select(u => u.Id)
+                .ToListAsync();
 
-            if (!unitExistsInTenant)
+            if (validUnitIds.Count != targetUnitIds.Count)
             {
-                throw new InvalidOperationException("Loja inválida para o tenant informado.");
+                throw new InvalidOperationException("Uma ou mais lojas são inválidas para o tenant informado.");
             }
 
             if (!string.IsNullOrWhiteSpace(dto.CpfCnpj))
@@ -58,26 +84,40 @@ namespace GestaoOficina.Features.Customers
                 if (existingCustomer != null)
                 {
                     existingCustomer.IsActive = true;
+                    existingCustomer.LegalTypeId = dto.LegalTypeId;
+                    existingCustomer.Name = dto.Name;
+                    existingCustomer.Email = dto.Email;
+                    existingCustomer.Phone = dto.Phone;
+                    existingCustomer.AddressZip = dto.AddressZip;
+                    existingCustomer.AddressStreet = dto.AddressStreet;
+                    existingCustomer.AddressNumber = dto.AddressNumber;
+                    existingCustomer.AddressDistrict = dto.AddressDistrict;
+                    existingCustomer.AddressCity = dto.AddressCity;
+                    existingCustomer.AddressState = dto.AddressState;
+                    existingCustomer.Notes = dto.Notes;
 
-                    var activeLink = existingCustomer.CustomerUnits
-                        .FirstOrDefault(cu => cu.UnitId == dto.UnitId && cu.IsActive);
-
-                    var inactiveLink = existingCustomer.CustomerUnits
-                        .FirstOrDefault(cu => cu.UnitId == dto.UnitId && !cu.IsActive);
-
-                    if (activeLink == null && inactiveLink == null)
+                    foreach (var unitId in targetUnitIds)
                     {
-                        _context.CustomerUnits.Add(new CustomerUnit
+                        var activeLink = existingCustomer.CustomerUnits
+                            .FirstOrDefault(cu => cu.UnitId == unitId && cu.IsActive);
+
+                        var inactiveLink = existingCustomer.CustomerUnits
+                            .FirstOrDefault(cu => cu.UnitId == unitId && !cu.IsActive);
+
+                        if (activeLink == null && inactiveLink == null)
                         {
-                            CustomerId = existingCustomer.Id,
-                            UnitId = dto.UnitId,
-                            IsActive = true
-                        });
-                    }
-                    else if (inactiveLink != null)
-                    {
-                        inactiveLink.IsActive = true;
-                        _context.CustomerUnits.Update(inactiveLink);
+                            _context.CustomerUnits.Add(new CustomerUnit
+                            {
+                                CustomerId = existingCustomer.Id,
+                                UnitId = unitId,
+                                IsActive = true
+                            });
+                        }
+                        else if (inactiveLink != null)
+                        {
+                            inactiveLink.IsActive = true;
+                            _context.CustomerUnits.Update(inactiveLink);
+                        }
                     }
 
                     _context.Customers.Update(existingCustomer);
@@ -113,13 +153,14 @@ namespace GestaoOficina.Features.Customers
             _context.Customers.Add(customer);
             await _context.SaveChangesAsync();
 
-            _context.CustomerUnits.Add(new CustomerUnit
+            var links = targetUnitIds.Select(unitId => new CustomerUnit
             {
                 CustomerId = customer.Id,
-                UnitId = dto.UnitId,
+                UnitId = unitId,
                 IsActive = true
-            });
+            }).ToList();
 
+            _context.CustomerUnits.AddRange(links);
             await _context.SaveChangesAsync();
 
             var reloadedNewCustomer = await _context.Customers
@@ -129,15 +170,67 @@ namespace GestaoOficina.Features.Customers
             return (reloadedNewCustomer, true);
         }
 
-        public async Task<Customer> UpdateCustomer(int id, UpdateCustomerRequest dto)
+        public async Task<Customer> UpdateCustomer(int id, UpdateCustomerRequest dto, int tenantId, List<int>? targetUnitIds = null)
         {
             var customer = await _context.Customers
-                .Include(c => c.CustomerUnits.Where(cu => cu.IsActive))
-                .FirstOrDefaultAsync(c => c.Id == id && c.IsActive);
+                .Include(c => c.CustomerUnits)
+                .FirstOrDefaultAsync(c => c.Id == id && c.TenantId == tenantId && c.IsActive);
 
             if (customer == null)
             {
                 throw new InvalidOperationException("Cliente não encontrado.");
+            }
+
+            if (targetUnitIds is { Count: > 0 })
+            {
+                targetUnitIds = targetUnitIds
+                    .Where(x => x > 0)
+                    .Distinct()
+                    .ToList();
+
+                var validUnitIds = await _context.Units
+                    .Where(u => targetUnitIds.Contains(u.Id) && u.TenantId == tenantId && u.IsActive)
+                    .Select(u => u.Id)
+                    .ToListAsync();
+
+                if (validUnitIds.Count != targetUnitIds.Count)
+                {
+                    throw new InvalidOperationException("Uma ou mais lojas são inválidas para o tenant informado.");
+                }
+
+                var targetSet = targetUnitIds.ToHashSet();
+
+                foreach (var link in customer.CustomerUnits.Where(cu => cu.IsActive && !targetSet.Contains(cu.UnitId)))
+                {
+                    link.IsActive = false;
+                    _context.CustomerUnits.Update(link);
+                }
+
+                foreach (var unitId in targetUnitIds)
+                {
+                    var activeLink = customer.CustomerUnits.FirstOrDefault(cu => cu.UnitId == unitId && cu.IsActive);
+                    var inactiveLink = customer.CustomerUnits.FirstOrDefault(cu => cu.UnitId == unitId && !cu.IsActive);
+
+                    if (activeLink is null && inactiveLink is null)
+                    {
+                        _context.CustomerUnits.Add(new CustomerUnit
+                        {
+                            CustomerId = customer.Id,
+                            UnitId = unitId,
+                            IsActive = true
+                        });
+                    }
+                    else if (inactiveLink is not null)
+                    {
+                        inactiveLink.IsActive = true;
+                        _context.CustomerUnits.Update(inactiveLink);
+                    }
+                }
+
+                if (!customer.CustomerUnits.Any(cu => cu.IsActive || targetSet.Contains(cu.UnitId)))
+                {
+                    throw new InvalidOperationException("O cliente deve permanecer vinculado a pelo menos uma loja.");
+                }
             }
 
             if (dto.LegalTypeId.HasValue)
@@ -154,7 +247,6 @@ namespace GestaoOficina.Features.Customers
             }
 
             if (dto.Name is not null) customer.Name = dto.Name;
-            if (dto.CpfCnpj is not null) customer.CpfCnpj = dto.CpfCnpj;
             if (dto.Email is not null) customer.Email = dto.Email;
             if (dto.Phone is not null) customer.Phone = dto.Phone;
             if (dto.AddressZip is not null) customer.AddressZip = dto.AddressZip;
@@ -173,16 +265,16 @@ namespace GestaoOficina.Features.Customers
                 .FirstAsync(c => c.Id == id);
         }
 
-        public async Task<bool> DeleteCustomerLinksOrCustomer(int customerId, List<int> targetUnitIds)
+        public async Task<bool> DeleteCustomerLinksOrCustomer(int customerId, int tenantId, List<int> allowedUnitIds, bool fullAccess)
         {
             var customer = await _context.Customers
                 .Include(c => c.CustomerUnits)
-                .FirstOrDefaultAsync(c => c.Id == customerId && c.IsActive);
+                .FirstOrDefaultAsync(c => c.Id == customerId && c.TenantId == tenantId && c.IsActive);
 
             if (customer == null) return false;
 
             var linksToDeactivate = customer.CustomerUnits
-                .Where(cu => cu.IsActive && targetUnitIds.Contains(cu.UnitId))
+                .Where(cu => cu.IsActive && (fullAccess || allowedUnitIds.Contains(cu.UnitId)))
                 .ToList();
 
             if (linksToDeactivate.Count == 0) return false;
@@ -207,6 +299,7 @@ namespace GestaoOficina.Features.Customers
         public bool HasAccessToCustomer(Customer customer, int tenantId, List<int> unitIds, bool fullAccess)
         {
             if (customer.TenantId != tenantId || !customer.IsActive) return false;
+            if (!customer.CustomerUnits.Any(cu => cu.IsActive)) return false; // sem vínculo ativo => sem acesso
             if (fullAccess) return true;
 
             return customer.CustomerUnits.Any(cu => cu.IsActive && unitIds.Contains(cu.UnitId));

@@ -20,7 +20,7 @@ namespace GestaoOficina.Controllers
 
         [HttpGet]
         [Authorize(Roles = "Admin")]
-        public async Task<ActionResult<List<UserResponse>>> GetAllUsers()
+        public async Task<ActionResult<List<UserResponse>>> GetAllUsers([FromQuery] int? unitId, [FromQuery] string? role)
         {
             var loggedUserIdStr = User.FindFirstValue(ClaimTypes.NameIdentifier);
             if (!int.TryParse(loggedUserIdStr, out var loggedUserId))
@@ -30,7 +30,17 @@ namespace GestaoOficina.Controllers
             if (loggedUser == null || !loggedUser.FullAccess)
                 return Forbid();
 
-            var users = await _service.GetTenantUsersAsync(loggedUser.TenantId);
+            UserRole? parsedRole = null;
+            if (!string.IsNullOrWhiteSpace(role))
+            {
+                if (!Enum.TryParse<UserRole>(role, true, out var roleEnum))
+                    return BadRequest("Cargo inválido. Valores permitidos: Admin, Comum.");
+
+                parsedRole = roleEnum;
+            }
+
+            var users = await _service.GetTenantUsersAsync(loggedUser.TenantId, unitId, parsedRole);
+
             var response = users.Select(u => new UserResponse
             {
                 Id = u.Id,

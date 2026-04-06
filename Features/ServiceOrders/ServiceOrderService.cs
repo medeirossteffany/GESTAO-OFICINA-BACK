@@ -14,7 +14,11 @@ namespace GestaoOficina.Features.ServiceOrders
             _context = context;
         }
 
-        public async Task<List<ServiceOrder>> GetServiceOrdersByTenantAndUnits(int tenantId, List<int> unitIds, bool fullAccess)
+        public async Task<List<ServiceOrder>> GetServiceOrdersByTenantAndUnits(
+            int tenantId,
+            List<int> unitIds,
+            bool fullAccess,
+            int? filterUnitId = null)
         {
             return await _context.ServiceOrders
                 .Include(so => so.Unit)
@@ -24,7 +28,9 @@ namespace GestaoOficina.Features.ServiceOrders
                 .Include(so => so.Parts.Where(p => p.IsActive))
                 .Where(so => so.TenantId == tenantId)
                 .Where(so => so.IsActive)
+                .Where(so => so.OwnerCustomer.IsActive) // novo
                 .Where(so => fullAccess || unitIds.Contains(so.UnitId))
+                .Where(so => !filterUnitId.HasValue || so.UnitId == filterUnitId.Value)
                 .OrderByDescending(so => so.CreatedAt)
                 .ToListAsync();
         }
@@ -37,7 +43,7 @@ namespace GestaoOficina.Features.ServiceOrders
                 .Include(so => so.OwnerCustomer)
                 .Include(so => so.Status)
                 .Include(so => so.Parts.Where(p => p.IsActive))
-                .FirstOrDefaultAsync(so => so.Id == id && so.IsActive);
+                .FirstOrDefaultAsync(so => so.Id == id && so.IsActive && so.OwnerCustomer.IsActive); 
         }
 
         public bool HasAccess(ServiceOrder serviceOrder, int tenantId, List<int> unitIds, bool fullAccess)

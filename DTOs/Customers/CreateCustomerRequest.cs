@@ -5,7 +5,9 @@ namespace GestaoOficina.DTOs.Customers
     public class CreateCustomerRequest
     {
         [Range(1, int.MaxValue)]
-        public int UnitId { get; set; }
+        public int? UnitId { get; set; } 
+
+        public List<int>? UnitIds { get; set; } 
 
         [Range(1, int.MaxValue)]
         public int LegalTypeId { get; set; }

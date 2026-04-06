@@ -20,13 +20,16 @@ namespace GestaoOficina.Controllers
         }
 
         [HttpGet]
-        public async Task<ActionResult<List<CustomerResponse>>> GetCustomers()
+        public async Task<ActionResult<List<CustomerResponse>>> GetCustomers([FromQuery] int? unitId)
         {
             var loggedTenantId = int.Parse(User.FindFirstValue("TenantId"));
             var fullAccess = bool.Parse(User.FindFirstValue("FullAccess") ?? "false");
             var unitIds = User.FindAll("UnitId").Select(c => int.Parse(c.Value)).ToList();
 
-            var customers = await _service.GetCustomersByTenantAndUnits(loggedTenantId, unitIds, fullAccess);
+            if (unitId.HasValue && !fullAccess && !unitIds.Contains(unitId.Value))
+                return Forbid();
+
+            var customers = await _service.GetCustomersByTenantAndUnits(loggedTenantId, unitIds, fullAccess, unitId);
             return Ok(customers.Select(ToResponse).ToList());
         }
 
@@ -54,15 +57,25 @@ namespace GestaoOficina.Controllers
             var fullAccess = bool.Parse(User.FindFirstValue("FullAccess") ?? "false");
             var unitIds = User.FindAll("UnitId").Select(c => int.Parse(c.Value)).ToList();
 
-            if (!fullAccess && !unitIds.Contains(dto.UnitId)) return Forbid();
+            if ((dto.UnitId.HasValue && dto.UnitId.Value <= 0) || (dto.UnitIds?.Any(id => id <= 0) ?? false))
+                return BadRequest("unitId/unitIds inválido(s).");
 
-            var (customer, createdNew) = await _service.CreateOrLinkCustomer(dto, loggedTenantId);
+            var targetUnitIds = new List<int>();
+            if (dto.UnitId.HasValue) targetUnitIds.Add(dto.UnitId.Value);
+            if (dto.UnitIds is { Count: > 0 }) targetUnitIds.AddRange(dto.UnitIds);
+            targetUnitIds = targetUnitIds.Distinct().ToList();
+
+            if (targetUnitIds.Count == 0)
+                return BadRequest("Informe ao menos uma loja em unitId ou unitIds.");
+
+            if (!fullAccess && targetUnitIds.Any(id => !unitIds.Contains(id)))
+                return Forbid();
+
+            var (customer, createdNew) = await _service.CreateOrLinkCustomer(dto, loggedTenantId, targetUnitIds);
             var response = ToResponse(customer);
 
             if (createdNew)
-            {
                 return CreatedAtAction(nameof(GetCustomer), new { id = customer.Id }, response);
-            }
 
             return Ok(response);
         }
@@ -81,46 +94,35 @@ namespace GestaoOficina.Controllers
             var hasAccess = _service.HasAccessToCustomer(customer, loggedTenantId, unitIds, fullAccess);
             if (!hasAccess) return Forbid();
 
-            var updatedCustomer = await _service.UpdateCustomer(id, dto);
+            List<int>? targetUnitIds = null;
+            var hasUnitInput = dto.UnitId.HasValue || (dto.UnitIds is { Count: > 0 });
+
+            if (hasUnitInput)
+            {
+                if ((dto.UnitId.HasValue && dto.UnitId.Value <= 0) || (dto.UnitIds?.Any(x => x <= 0) ?? false))
+                    return BadRequest("unitId/unitIds inválido(s).");
+
+                targetUnitIds = new List<int>();
+                if (dto.UnitId.HasValue) targetUnitIds.Add(dto.UnitId.Value);
+                if (dto.UnitIds is { Count: > 0 }) targetUnitIds.AddRange(dto.UnitIds);
+
+                targetUnitIds = targetUnitIds.Distinct().ToList();
+
+                if (!fullAccess && targetUnitIds.Any(x => !unitIds.Contains(x)))
+                    return Forbid();
+            }
+
+            var updatedCustomer = await _service.UpdateCustomer(id, dto, loggedTenantId, targetUnitIds);
             return Ok(ToResponse(updatedCustomer));
         }
 
         [HttpDelete("{id}")]
         [Authorize(Roles = "Admin")]
-        public async Task<IActionResult> DeleteCustomer(int id, [FromQuery] int? unitId, [FromQuery] string? unitIds)
+        public async Task<IActionResult> DeleteCustomer(int id)
         {
             var loggedTenantId = int.Parse(User.FindFirstValue("TenantId"));
             var fullAccess = bool.Parse(User.FindFirstValue("FullAccess") ?? "false");
             var allowedUnitIds = User.FindAll("UnitId").Select(c => int.Parse(c.Value)).ToList();
-
-            var targetUnitIds = new List<int>();
-
-            if (unitId.HasValue)
-            {
-                targetUnitIds.Add(unitId.Value);
-            }
-
-            if (!string.IsNullOrWhiteSpace(unitIds))
-            {
-                var parts = unitIds.Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries);
-                foreach (var part in parts)
-                {
-                    if (!int.TryParse(part, out var parsed))
-                    {
-                        return BadRequest("Parametro unitIds inválido.");
-                    }
-
-                    targetUnitIds.Add(parsed);
-                }
-            }
-
-            targetUnitIds = targetUnitIds.Distinct().ToList();
-            if (targetUnitIds.Count == 0)
-            {
-                return BadRequest("Informe ao menos um unitId/unitIds para remoção.");
-            }
-
-            if (!fullAccess && targetUnitIds.Any(idToRemove => !allowedUnitIds.Contains(idToRemove))) return Forbid();
 
             var customer = await _service.GetCustomerById(id);
             if (customer == null) return NotFound();
@@ -128,7 +130,7 @@ namespace GestaoOficina.Controllers
             var hasAccess = _service.HasAccessToCustomer(customer, loggedTenantId, allowedUnitIds, fullAccess);
             if (!hasAccess) return Forbid();
 
-            var success = await _service.DeleteCustomerLinksOrCustomer(id, targetUnitIds);
+            var success = await _service.DeleteCustomerLinksOrCustomer(id, loggedTenantId, allowedUnitIds, fullAccess);
             if (!success) return BadRequest();
 
             return NoContent();

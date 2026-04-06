@@ -106,10 +106,23 @@ namespace GestaoOficina.Features.Users
                 .FirstOrDefaultAsync(u => u.Id == id && u.IsActive);
         }
 
-        public async Task<List<User>> GetTenantUsersAsync(int tenantId)
+        public async Task<List<User>> GetTenantUsersAsync(int tenantId, int? unitId = null, UserRole? role = null)
         {
-            return await _context.Users
+            var query = _context.Users
                 .Where(u => u.TenantId == tenantId && u.IsActive)
+                .AsQueryable();
+
+            if (role.HasValue)
+            {
+                query = query.Where(u => u.Role == role.Value);
+            }
+
+            if (unitId.HasValue)
+            {
+                query = query.Where(u => u.UserUnits.Any(uu => uu.IsActive && uu.UnitId == unitId.Value));
+            }
+
+            return await query
                 .Include(u => u.UserUnits.Where(uu => uu.IsActive))
                 .ToListAsync();
         }

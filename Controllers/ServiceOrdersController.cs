@@ -48,13 +48,24 @@ namespace GestaoOficina.Controllers
         }
 
         [HttpGet]
-        public async Task<IActionResult> GetServiceOrders()
+        public async Task<IActionResult> GetServiceOrders([FromQuery] int? unitId)
         {
             var loggedTenantId = int.Parse(User.FindFirstValue("TenantId"));
             var fullAccess = bool.Parse(User.FindFirstValue("FullAccess") ?? "false");
             var unitIds = User.FindAll("UnitId").Select(c => int.Parse(c.Value)).ToList();
 
-            var serviceOrders = await _service.GetServiceOrdersByTenantAndUnits(loggedTenantId, unitIds, fullAccess);
+            if (unitId.HasValue && unitId.Value <= 0)
+                return BadRequest(new { message = "unitId inválido." });
+
+            if (unitId.HasValue && !fullAccess && !unitIds.Contains(unitId.Value))
+                return Forbid();
+
+            var serviceOrders = await _service.GetServiceOrdersByTenantAndUnits(
+                loggedTenantId,
+                unitIds,
+                fullAccess,
+                unitId);
+
             return Ok(serviceOrders.Select(ToResponse));
         }
 

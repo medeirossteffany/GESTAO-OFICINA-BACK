@@ -3,6 +3,8 @@
     public class UpdateCustomerRequest
     {
         public int? LegalTypeId { get; set; }
+        public int? UnitId { get; set; }
+        public List<int>? UnitIds { get; set; }
         public string? Name { get; set; }
         public string? CpfCnpj { get; set; }
         public string? Email { get; set; }
