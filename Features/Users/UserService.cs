@@ -155,7 +155,7 @@ namespace GestaoOficina.Features.Users
         public async Task<User?> UpdateUserAsync(int userId, UpdateUserRequest dto)
         {
             var user = await _context.Users
-                .Include(u => u.UserUnits.Where(uu => uu.IsActive))
+                .Include(u => u.UserUnits) // importante: carregar ativos + inativos
                 .FirstOrDefaultAsync(u => u.Id == userId && u.IsActive);
 
             if (user == null) return null;
@@ -202,41 +202,40 @@ namespace GestaoOficina.Features.Users
             if (dto.AddressState is not null) user.AddressState = dto.AddressState;
             user.Role = parsedRole;
             if (dto.IsActive.HasValue) user.IsActive = dto.IsActive.Value;
-            user.FullAccess = parsedRole == UserRole.Admin ? true : (dto.FullAccess ?? user.FullAccess);
+            user.FullAccess = parsedRole == UserRole.Admin;
 
             var shouldUpdateUnits = !string.IsNullOrWhiteSpace(dto.Role) || dto.UnitIds is not null;
             if (shouldUpdateUnits)
             {
-                var existingUnits = user.UserUnits.Where(uu => uu.IsActive).ToList();
-                foreach (var existingUnit in existingUnits)
+                foreach (var existingUnit in user.UserUnits.Where(uu => uu.IsActive))
                 {
                     existingUnit.IsActive = false;
                 }
 
-                if (existingUnits.Count > 0)
-                {
-                    _context.UserUnits.UpdateRange(existingUnits);
-                }
+                List<int> targetUnitIds = new();
 
                 if (parsedRole == UserRole.Admin)
                 {
-                    var tenantUnits = await _context.Units
+                    targetUnitIds = await _context.Units
                         .Where(u => u.TenantId == user.TenantId && u.IsActive)
+                        .Select(u => u.Id)
                         .ToListAsync();
-
-                    foreach (var unit in tenantUnits)
-                    {
-                        _context.UserUnits.Add(new UserUnit
-                        {
-                            UserId = user.Id,
-                            UnitId = unit.Id,
-                            IsActive = true
-                        });
-                    }
                 }
                 else if (dto.UnitIds is { Count: > 0 })
                 {
-                    foreach (var unitId in dto.UnitIds)
+                    targetUnitIds = dto.UnitIds
+                        .Distinct()
+                        .ToList();
+                }
+
+                foreach (var unitId in targetUnitIds)
+                {
+                    var existingLink = user.UserUnits.FirstOrDefault(uu => uu.UnitId == unitId);
+                    if (existingLink is not null)
+                    {
+                        existingLink.IsActive = true;
+                    }
+                    else
                     {
                         _context.UserUnits.Add(new UserUnit
                         {
@@ -250,6 +249,7 @@ namespace GestaoOficina.Features.Users
 
             _context.Users.Update(user);
             await _context.SaveChangesAsync();
+
             return await GetUserByIdAsync(user.Id);
         }
 

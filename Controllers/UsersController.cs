@@ -104,6 +104,9 @@ namespace GestaoOficina.Controllers
         [Authorize(Roles = "Admin")]
         public async Task<ActionResult<UserResponse>> UpdateUser(int id, UpdateUserRequest dto)
         {
+            if (string.IsNullOrWhiteSpace(dto.Role))
+                return BadRequest("Role é obrigatório.");
+
             var loggedUserIdStr = User.FindFirstValue(ClaimTypes.NameIdentifier);
             if (!int.TryParse(loggedUserIdStr, out var loggedUserId))
                 return Unauthorized();
@@ -119,7 +122,7 @@ namespace GestaoOficina.Controllers
             if (loggedUser.TenantId != userToUpdate.TenantId)
                 return Forbid();
 
-            var roleToValidate = dto.Role ?? userToUpdate.Role.ToString();
+            var roleToValidate = dto.Role;
             var isAdmin = Enum.TryParse<UserRole>(roleToValidate, true, out var role) && role == UserRole.Admin;
             if (isAdmin && dto.UnitIds != null && dto.UnitIds.Count > 0)
                 return BadRequest("Usuários admin são atribuidos a todas as units automaticamente. Não é possível especificar unidades individuais.");

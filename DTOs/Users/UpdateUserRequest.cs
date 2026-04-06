@@ -1,4 +1,6 @@
-﻿namespace GestaoOficina.DTOs.Users
+﻿using System.ComponentModel.DataAnnotations;
+
+namespace GestaoOficina.DTOs.Users
 {
     public class UpdateUserRequest
     {
@@ -12,7 +14,10 @@
         public string? AddressDistrict { get; set; }
         public string? AddressCity { get; set; }
         public string? AddressState { get; set; }
-        public string? Role { get; set; }
+
+        [Required(ErrorMessage = "Role é obrigatório.")]
+        public string Role { get; set; } = default!;
+
         public bool? IsActive { get; set; }
         public bool? FullAccess { get; set; }
         public List<int>? UnitIds { get; set; }
