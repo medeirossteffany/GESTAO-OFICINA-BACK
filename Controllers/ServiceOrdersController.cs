@@ -33,18 +33,9 @@ namespace GestaoOficina.Controllers
                 return BadRequest(new { message = "Arquivo não enviado." });
 
             var loggedTenantId = int.Parse(User.FindFirstValue("TenantId"));
-            var fullAccess = bool.Parse(User.FindFirstValue("FullAccess") ?? "false");
-            var unitIds = User.FindAll("UnitId").Select(c => int.Parse(c.Value)).ToList();
+            var result = await _excelService.ParseExcelSummaryByStore(file, loggedTenantId, new List<int>(), false);
 
-            try
-            {
-                var result = await _excelService.ParseExcelSummaryByStore(file, loggedTenantId, unitIds, fullAccess);
-                return Ok(result);
-            }
-            catch (InvalidOperationException ex)
-            {
-                return BadRequest(new { message = ex.Message });
-            }
+            return Ok(result);
         }
 
         [HttpGet]

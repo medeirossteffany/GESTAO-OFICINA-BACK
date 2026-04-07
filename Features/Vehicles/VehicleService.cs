@@ -62,12 +62,26 @@ namespace GestaoOficina.Features.Vehicles
                 throw new InvalidOperationException("Cliente inválido para o tenant informado.");
             }
 
-            var duplicatePlate = await _context.Vehicles
-                .AnyAsync(v => v.TenantId == tenantId && v.Plate == dto.Plate && v.IsActive);
+            var existingVehicle = await _context.Vehicles
+                .FirstOrDefaultAsync(v => v.TenantId == tenantId && v.Plate == dto.Plate);
 
-            if (duplicatePlate)
+            if (existingVehicle != null)
             {
-                throw new InvalidOperationException($"A placa {dto.Plate} já está cadastrada para este tenant.");
+                existingVehicle.CustomerId = dto.CustomerId;
+                existingVehicle.Brand = dto.Brand;
+                existingVehicle.Model = dto.Model;
+                existingVehicle.Year = dto.Year;
+                existingVehicle.Color = dto.Color;
+                existingVehicle.Vin = dto.Vin;
+                existingVehicle.Renavam = dto.Renavam;
+                existingVehicle.InsuranceClaimNumber = dto.InsuranceClaimNumber;
+                existingVehicle.Notes = dto.Notes;
+                existingVehicle.IsActive = true;
+
+                _context.Vehicles.Update(existingVehicle);
+                await _context.SaveChangesAsync();
+
+                return await GetVehicleById(existingVehicle.Id) ?? existingVehicle;
             }
 
             var vehicle = new Vehicle

@@ -1,23 +1,13 @@
 using System.Globalization;
 using System.Text;
-using System.Text.RegularExpressions;
 using ClosedXML.Excel;
-using GestaoOficina.Data;
 using GestaoOficina.DTOs.ServiceOrders;
 using Microsoft.AspNetCore.Http;
-using Microsoft.EntityFrameworkCore;
 
 namespace GestaoOficina.Features.ServiceOrders
 {
     public class ServiceOrderExcelService
     {
-        private readonly AppDbContext _context;
-
-        public ServiceOrderExcelService(AppDbContext context)
-        {
-            _context = context;
-        }
-
         public async Task<ServiceOrderExcelSummaryResponse> ParseExcelSummaryByStore(
             IFormFile file,
             int tenantId,
@@ -31,21 +21,13 @@ namespace GestaoOficina.Features.ServiceOrders
             if (extension is not (".xlsx" or ".csv"))
                 throw new InvalidOperationException("Formato inválido. Envie arquivo .xlsx ou .csv.");
 
-            var allowedUnits = await _context.Units
-                .Where(u => u.TenantId == tenantId && u.IsActive && (fullAccess || unitIds.Contains(u.Id)))
-                .Select(u => new AllowedUnit(u.Id, u.Name))
-                .ToListAsync();
-
+            // Sem qualquer filtro por usuário/tenant/loja cadastrada
             return extension == ".xlsx"
-                ? ParseFromXlsx(file, fullAccess, unitIds, allowedUnits)
-                : await ParseFromCsvAsync(file, fullAccess, unitIds, allowedUnits);
+                ? ParseFromXlsx(file)
+                : await ParseFromCsvAsync(file);
         }
 
-        private ServiceOrderExcelSummaryResponse ParseFromXlsx(
-            IFormFile file,
-            bool fullAccess,
-            List<int> unitIds,
-            List<AllowedUnit> allowedUnits)
+        private ServiceOrderExcelSummaryResponse ParseFromXlsx(IFormFile file)
         {
             using var stream = file.OpenReadStream();
             using var workbook = new XLWorkbook(stream);
@@ -54,9 +36,7 @@ namespace GestaoOficina.Features.ServiceOrders
 
             var headerRow = worksheet.Row(1);
             var headers = headerRow.CellsUsed()
-                .ToDictionary(
-                    c => Normalize(c.GetString()),
-                    c => c.Address.ColumnNumber);
+                .ToDictionary(c => Normalize(c.GetString()), c => c.Address.ColumnNumber);
 
             var colPlaca = GetRequiredColumn(headers, "PLACA");
             var colTpServico = GetRequiredColumn(headers, "TPSERVICO");
@@ -76,30 +56,23 @@ namespace GestaoOficina.Features.ServiceOrders
                     continue;
 
                 AddRecord(
-                    rowNumber: rowNumber,
-                    loja: row.Cell(colLoja).GetString().Trim(),
-                    valorRawPrimary: row.Cell(colValor).GetString(),
-                    valorRawSecondary: row.Cell(colValor).Value.ToString(),
-                    placa: row.Cell(colPlaca).GetString().Trim(),
-                    tpServico: row.Cell(colTpServico).GetString().Trim(),
-                    fornecedor: row.Cell(colFornecedor).GetString().Trim(),
-                    obsConsultor: row.Cell(colObsConsultor).GetString().Trim(),
-                    fullAccess: fullAccess,
-                    unitIds: unitIds,
-                    allowedUnits: allowedUnits,
-                    grouped: grouped,
-                    result: result);
+                    rowNumber,
+                    row.Cell(colLoja).GetString().Trim(),
+                    row.Cell(colValor).GetString(),
+                    row.Cell(colValor).Value.ToString(),
+                    row.Cell(colPlaca).GetString().Trim(),
+                    row.Cell(colTpServico).GetString().Trim(),
+                    row.Cell(colFornecedor).GetString().Trim(),
+                    row.Cell(colObsConsultor).GetString().Trim(),
+                    grouped,
+                    result);
             }
 
             FinalizeResult(grouped, result);
             return result;
         }
 
-        private async Task<ServiceOrderExcelSummaryResponse> ParseFromCsvAsync(
-            IFormFile file,
-            bool fullAccess,
-            List<int> unitIds,
-            List<AllowedUnit> allowedUnits)
+        private async Task<ServiceOrderExcelSummaryResponse> ParseFromCsvAsync(IFormFile file)
         {
             using var stream = file.OpenReadStream();
             using var reader = new StreamReader(stream, Encoding.UTF8, detectEncodingFromByteOrderMarks: true);
@@ -135,23 +108,19 @@ namespace GestaoOficina.Features.ServiceOrders
                     continue;
 
                 var fields = SplitCsvLine(line, delimiter);
-
                 string GetField(int index) => index >= 0 && index < fields.Count ? fields[index].Trim() : string.Empty;
 
                 AddRecord(
-                    rowNumber: rowNumber,
-                    loja: GetField(colLoja),
-                    valorRawPrimary: GetField(colValor),
-                    valorRawSecondary: GetField(colValor),
-                    placa: GetField(colPlaca),
-                    tpServico: GetField(colTpServico),
-                    fornecedor: GetField(colFornecedor),
-                    obsConsultor: GetField(colObsConsultor),
-                    fullAccess: fullAccess,
-                    unitIds: unitIds,
-                    allowedUnits: allowedUnits,
-                    grouped: grouped,
-                    result: result);
+                    rowNumber,
+                    GetField(colLoja),
+                    GetField(colValor),
+                    GetField(colValor),
+                    GetField(colPlaca),
+                    GetField(colTpServico),
+                    GetField(colFornecedor),
+                    GetField(colObsConsultor),
+                    grouped,
+                    result);
             }
 
             FinalizeResult(grouped, result);
@@ -167,16 +136,10 @@ namespace GestaoOficina.Features.ServiceOrders
             string tpServico,
             string fornecedor,
             string? obsConsultor,
-            bool fullAccess,
-            List<int> unitIds,
-            List<AllowedUnit> allowedUnits,
             Dictionary<string, ServiceOrderExcelStoreSummaryResponse> grouped,
             ServiceOrderExcelSummaryResponse result)
         {
             if (string.IsNullOrWhiteSpace(loja))
-                return;
-
-            if (!HasAccessToStore(loja, fullAccess, unitIds, allowedUnits))
                 return;
 
             if (!TryParseDecimal(valorRawPrimary, out var valor) && !TryParseDecimal(valorRawSecondary, out valor))
@@ -213,7 +176,6 @@ namespace GestaoOficina.Features.ServiceOrders
             placaSummary.QuantidadeServicos = placaSummary.Servicos.Count;
 
             lojaSummary.TotalLoja += servico.Valor;
-
             result.TotalLinhasProcessadas++;
             result.TotalGeral += servico.Valor;
         }
@@ -249,22 +211,6 @@ namespace GestaoOficina.Features.ServiceOrders
                 throw new InvalidOperationException($"Coluna obrigatória não encontrada: {key}.");
 
             return column;
-        }
-
-        private static bool HasAccessToStore(
-            string loja,
-            bool fullAccess,
-            List<int> unitIds,
-            List<AllowedUnit> allowedUnits)
-        {
-            if (fullAccess) return true;
-
-            var match = Regex.Match(loja, @"^\s*(\d+)\s*[-]");
-            if (match.Success && int.TryParse(match.Groups[1].Value, out var unitIdFromExcel))
-                return unitIds.Contains(unitIdFromExcel);
-
-            var normalizedLoja = Normalize(loja);
-            return allowedUnits.Any(u => normalizedLoja.Contains(Normalize(u.Name)));
         }
 
         private static bool TryParseDecimal(string? value, out decimal result)
@@ -373,7 +319,5 @@ namespace GestaoOficina.Features.ServiceOrders
             result.Add(sb.ToString());
             return result;
         }
-
-        private sealed record AllowedUnit(int Id, string Name);
     }
 }
