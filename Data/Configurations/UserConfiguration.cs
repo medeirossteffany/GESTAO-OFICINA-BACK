@@ -15,8 +15,16 @@ namespace GestaoOficina.Data.Configurations
             builder.Property(u => u.IsActive).IsRequired();
             builder.Property(u => u.FullAccess).IsRequired().HasDefaultValue(false);
             builder.Property(u => u.CreatedAt).IsRequired();
-            builder.HasIndex(u => u.Email).IsUnique().HasFilter("[Email] IS NOT NULL");
-            builder.HasIndex(u => u.PhoneNumber).IsUnique().HasFilter("[PhoneNumber] IS NOT NULL");
+            builder.HasIndex(u => u.NormalizedEmail)
+                .IsUnique()
+                .HasDatabaseName("IX_AspNetUsers_NormalizedEmail");
+
+            builder.HasIndex(u => u.CpfCnpj)
+                .IsUnique()
+                .HasDatabaseName("IX_AspNetUsers_CpfCnpj");
+
+            builder.HasIndex(u => u.PhoneNumber).IsUnique();
+
             builder.HasOne(u => u.Tenant)
                 .WithMany(t => t.Users)
                 .HasForeignKey(u => u.TenantId);

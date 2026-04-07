@@ -21,5 +21,6 @@ namespace GestaoOficina.DTOs.Users
         public bool? IsActive { get; set; }
         public bool? FullAccess { get; set; }
         public List<int>? UnitIds { get; set; }
+        public string? NewPassword { get; set; }
     }
 }

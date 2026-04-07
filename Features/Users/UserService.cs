@@ -38,6 +38,17 @@ namespace GestaoOficina.Features.Users
                 }
             }
 
+            if (!string.IsNullOrWhiteSpace(dto.CpfCnpj))
+            {
+                var existingUserByCpfCnpj = await _context.Users
+                    .FirstOrDefaultAsync(u => u.CpfCnpj == dto.CpfCnpj);
+
+                if (existingUserByCpfCnpj != null)
+                {
+                    throw new InvalidOperationException($"O CPF/CNPJ {dto.CpfCnpj} já está registrado no sistema.");
+                }
+            }
+
             var parsedRole = Enum.TryParse<UserRole>(dto.Role, true, out var role) ? role : UserRole.Comum;
 
             var user = new User
@@ -168,7 +179,7 @@ namespace GestaoOficina.Features.Users
         public async Task<User?> UpdateUserAsync(int userId, UpdateUserRequest dto)
         {
             var user = await _context.Users
-                .Include(u => u.UserUnits) 
+                .Include(u => u.UserUnits)
                 .FirstOrDefaultAsync(u => u.Id == userId && u.IsActive);
 
             if (user == null) return null;
@@ -202,9 +213,24 @@ namespace GestaoOficina.Features.Users
                 parsedRole = Enum.TryParse<UserRole>(dto.Role, true, out var role) ? role : UserRole.Comum;
             }
 
+            var targetCpfCnpj = dto.CpfCnpj ?? user.CpfCnpj;
+            if (!string.IsNullOrWhiteSpace(targetCpfCnpj) && !string.Equals(user.CpfCnpj, targetCpfCnpj, StringComparison.Ordinal))
+            {
+                var existingUserByCpfCnpj = await _context.Users
+                    .FirstOrDefaultAsync(u => u.Id != userId && u.CpfCnpj == targetCpfCnpj);
+
+                if (existingUserByCpfCnpj != null)
+                {
+                    throw new InvalidOperationException($"O CPF/CNPJ {targetCpfCnpj} já está registrado no sistema.");
+                }
+            }
+
             if (dto.Name is not null) user.Name = dto.Name;
             user.Email = targetEmail;
             user.UserName = targetEmail;
+            user.NormalizedEmail = _userManager.NormalizeEmail(targetEmail);
+            user.NormalizedUserName = _userManager.NormalizeName(targetEmail);
+
             if (dto.PhoneNumber is not null) user.PhoneNumber = dto.PhoneNumber;
             if (dto.CpfCnpj is not null) user.CpfCnpj = dto.CpfCnpj;
             if (dto.AddressZip is not null) user.AddressZip = dto.AddressZip;
@@ -257,6 +283,23 @@ namespace GestaoOficina.Features.Users
                             IsActive = true
                         });
                     }
+                }
+            }
+
+            var newPassword = dto.NewPassword?.Trim();
+
+            if (!string.IsNullOrEmpty(newPassword))
+            {
+                if (newPassword.Length < 6)
+                    throw new InvalidOperationException("A nova senha deve ter no mínimo 6 caracteres.");
+
+                var resetToken = await _userManager.GeneratePasswordResetTokenAsync(user);
+                var passwordResult = await _userManager.ResetPasswordAsync(user, resetToken, newPassword);
+
+                if (!passwordResult.Succeeded)
+                {
+                    throw new InvalidOperationException(
+                        $"Falha ao atualizar senha: {string.Join(", ", passwordResult.Errors.Select(e => e.Description))}");
                 }
             }
 

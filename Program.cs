@@ -47,7 +47,8 @@ builder.Services.AddIdentity<User, IdentityRole<int>>(options =>
     options.Password.RequireNonAlphanumeric = false;
     options.Password.RequiredLength = 6;
 })
-.AddEntityFrameworkStores<AppDbContext>();
+.AddEntityFrameworkStores<AppDbContext>()
+.AddDefaultTokenProviders();
 
 var jwtKey = Environment.GetEnvironmentVariable("JWT_KEY") ?? "sua-chave-secreta-bem-grande";
 var jwtIssuer = Environment.GetEnvironmentVariable("JWT_ISSUER") ?? "GestaoOficina";
