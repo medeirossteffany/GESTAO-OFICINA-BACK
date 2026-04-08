@@ -2,19 +2,25 @@
 using GestaoOficina.DTOs.Units;
 using GestaoOficina.Data;
 using Microsoft.EntityFrameworkCore;
+using GestaoOficina.Features.Tenants;
 
 namespace GestaoOficina.Features.Units
 {
     public class UnitService
     {
         private readonly AppDbContext _context;
-        public UnitService(AppDbContext context)
+        private readonly TenantPlanValidator _planValidator;
+
+        public UnitService(AppDbContext context, TenantPlanValidator planValidator)
         {
             _context = context;
+            _planValidator = planValidator;
         }
 
         public async Task<Unit> CreateUnit(CreateUnitRequest dto, int tenantId)
         {
+            await _planValidator.EnsureCanCreateUnitAsync(tenantId);
+
             if (!string.IsNullOrWhiteSpace(dto.Cnpj))
             {
                 var unitInOtherTenant = await _context.Units
@@ -44,6 +50,7 @@ namespace GestaoOficina.Features.Units
             };
             _context.Units.Add(unit);
             await _context.SaveChangesAsync();
+            await _planValidator.RegisterUnitCreatedAsync(tenantId);
             return unit;
         }
 
@@ -123,6 +130,11 @@ namespace GestaoOficina.Features.Units
                 .Where(so => so.UnitId == id && so.IsActive)
                 .ToListAsync();
 
+            var now = DateTime.UtcNow;
+            var monthStart = new DateTime(now.Year, now.Month, 1, 0, 0, 0, DateTimeKind.Utc);
+            var nextMonthStart = monthStart.AddMonths(1);
+            var currentMonthServiceOrdersDeleted = serviceOrders.Count(so => so.CreatedAt >= monthStart && so.CreatedAt < nextMonthStart);
+
             foreach (var serviceOrder in serviceOrders)
             {
                 serviceOrder.IsActive = false;
@@ -157,6 +169,8 @@ namespace GestaoOficina.Features.Units
             if (timelines.Count > 0) _context.ServiceOrderTimelines.UpdateRange(timelines);
 
             await _context.SaveChangesAsync();
+            await _planValidator.RegisterUnitDeletedAsync(unit.TenantId);
+            await _planValidator.RegisterServiceOrdersDeletedInCurrentMonthAsync(unit.TenantId, currentMonthServiceOrdersDeleted);
             return true;
         }
     }

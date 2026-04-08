@@ -2,16 +2,19 @@
 using GestaoOficina.DTOs.ServiceOrders;
 using GestaoOficina.Entities;
 using Microsoft.EntityFrameworkCore;
+using GestaoOficina.Features.Tenants;
 
 namespace GestaoOficina.Features.ServiceOrders
 {
     public class ServiceOrderService
     {
         private readonly AppDbContext _context;
+        private readonly TenantPlanValidator _planValidator;
 
-        public ServiceOrderService(AppDbContext context)
+        public ServiceOrderService(AppDbContext context, TenantPlanValidator planValidator)
         {
             _context = context;
+            _planValidator = planValidator;
         }
 
         public async Task<List<ServiceOrder>> GetServiceOrdersByTenantAndUnits(
@@ -61,6 +64,8 @@ namespace GestaoOficina.Features.ServiceOrders
             List<int> unitIds,
             bool fullAccess)
         {
+            await _planValidator.EnsureCanCreateServiceOrderInMonthAsync(tenantId);
+
             if (!fullAccess && !unitIds.Contains(dto.UnitId))
             {
                 throw new InvalidOperationException("Usuário sem acesso à unidade informada.");
@@ -177,6 +182,7 @@ namespace GestaoOficina.Features.ServiceOrders
             });
 
             await _context.SaveChangesAsync();
+            await _planValidator.RegisterServiceOrderCreatedAsync(tenantId, serviceOrder.CreatedAt);
             await transaction.CommitAsync();
 
             return await GetServiceOrderById(serviceOrder.Id) ?? serviceOrder;
@@ -456,6 +462,7 @@ namespace GestaoOficina.Features.ServiceOrders
             if (timelines.Count > 0) _context.ServiceOrderTimelines.UpdateRange(timelines);
 
             await _context.SaveChangesAsync();
+            await _planValidator.RegisterServiceOrderDeletedAsync(tenantId, serviceOrder.CreatedAt);
             return true;
         }
 

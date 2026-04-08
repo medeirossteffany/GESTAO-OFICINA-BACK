@@ -2,16 +2,19 @@
 using GestaoOficina.DTOs.Vehicles;
 using GestaoOficina.Entities;
 using Microsoft.EntityFrameworkCore;
+using GestaoOficina.Features.Tenants;
 
 namespace GestaoOficina.Features.Vehicles
 {
     public class VehicleService
     {
         private readonly AppDbContext _context;
+        private readonly TenantPlanValidator _planValidator;
 
-        public VehicleService(AppDbContext context)
+        public VehicleService(AppDbContext context, TenantPlanValidator planValidator)
         {
             _context = context;
+            _planValidator = planValidator;
         }
 
         public async Task<List<Vehicle>> GetVehiclesByTenantAndUnits(
@@ -67,6 +70,13 @@ namespace GestaoOficina.Features.Vehicles
 
             if (existingVehicle != null)
             {
+                var wasInactive = !existingVehicle.IsActive;
+
+                if (!existingVehicle.IsActive)
+                {
+                    await _planValidator.EnsureCanCreateVehicleAsync(tenantId);
+                }
+
                 existingVehicle.CustomerId = dto.CustomerId;
                 existingVehicle.Brand = dto.Brand;
                 existingVehicle.Model = dto.Model;
@@ -81,8 +91,15 @@ namespace GestaoOficina.Features.Vehicles
                 _context.Vehicles.Update(existingVehicle);
                 await _context.SaveChangesAsync();
 
+                if (wasInactive)
+                {
+                    await _planValidator.RegisterVehicleCreatedAsync(tenantId);
+                }
+
                 return await GetVehicleById(existingVehicle.Id) ?? existingVehicle;
             }
+
+            await _planValidator.EnsureCanCreateVehicleAsync(tenantId);
 
             var vehicle = new Vehicle
             {
@@ -103,6 +120,7 @@ namespace GestaoOficina.Features.Vehicles
 
             _context.Vehicles.Add(vehicle);
             await _context.SaveChangesAsync();
+            await _planValidator.RegisterVehicleCreatedAsync(tenantId);
 
             return await GetVehicleById(vehicle.Id) ?? vehicle;
         }
@@ -165,6 +183,11 @@ namespace GestaoOficina.Features.Vehicles
                 .Where(so => so.VehicleId == id && so.IsActive)
                 .ToListAsync();
 
+            var now = DateTime.UtcNow;
+            var monthStart = new DateTime(now.Year, now.Month, 1, 0, 0, 0, DateTimeKind.Utc);
+            var nextMonthStart = monthStart.AddMonths(1);
+            var currentMonthServiceOrdersDeleted = serviceOrders.Count(so => so.CreatedAt >= monthStart && so.CreatedAt < nextMonthStart);
+
             foreach (var serviceOrder in serviceOrders)
             {
                 serviceOrder.IsActive = false;
@@ -196,6 +219,8 @@ namespace GestaoOficina.Features.Vehicles
             if (timelines.Count > 0) _context.ServiceOrderTimelines.UpdateRange(timelines);
 
             await _context.SaveChangesAsync();
+            await _planValidator.RegisterVehicleDeletedAsync(vehicle.TenantId);
+            await _planValidator.RegisterServiceOrdersDeletedInCurrentMonthAsync(vehicle.TenantId, currentMonthServiceOrdersDeleted);
             return true;
         }
 

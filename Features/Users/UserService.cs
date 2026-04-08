@@ -3,6 +3,7 @@ using GestaoOficina.DTOs.Users;
 using GestaoOficina.Data;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
+using GestaoOficina.Features.Tenants;
 
 namespace GestaoOficina.Features.Users
 {
@@ -10,15 +11,19 @@ namespace GestaoOficina.Features.Users
     {
         private readonly AppDbContext _context;
         private readonly UserManager<User> _userManager;
-        
-        public UserService(AppDbContext context, UserManager<User> userManager)
+        private readonly TenantPlanValidator _planValidator;
+
+        public UserService(AppDbContext context, UserManager<User> userManager, TenantPlanValidator planValidator)
         {
             _context = context;
             _userManager = userManager;
+            _planValidator = planValidator;
         }
 
         public async Task<User> CreateUserAsync(CreateUserRequest dto, int tenantId)
         {
+            await _planValidator.EnsureCanCreateUserAsync(tenantId);
+
             var existingUserByEmail = await _context.Users
                 .FirstOrDefaultAsync(u => u.Email == dto.Email);
 
@@ -107,6 +112,7 @@ namespace GestaoOficina.Features.Users
             }
 
             await _context.SaveChangesAsync();
+            await _planValidator.RegisterUserCreatedAsync(tenantId);
             return await GetUserByIdAsync(user.Id) ?? user;
         }
 
@@ -226,6 +232,7 @@ namespace GestaoOficina.Features.Users
             }
 
             if (dto.Name is not null) user.Name = dto.Name;
+            var wasActive = user.IsActive;
             user.Email = targetEmail;
             user.UserName = targetEmail;
             user.NormalizedEmail = _userManager.NormalizeEmail(targetEmail);
@@ -306,6 +313,11 @@ namespace GestaoOficina.Features.Users
             _context.Users.Update(user);
             await _context.SaveChangesAsync();
 
+            if (wasActive && !user.IsActive)
+            {
+                await _planValidator.RegisterUserDeletedAsync(user.TenantId);
+            }
+
             return await GetUserByIdAsync(user.Id);
         }
 
@@ -332,6 +344,7 @@ namespace GestaoOficina.Features.Users
             }
 
             await _context.SaveChangesAsync();
+            await _planValidator.RegisterUserDeletedAsync(user.TenantId);
             return true;
         }
     }

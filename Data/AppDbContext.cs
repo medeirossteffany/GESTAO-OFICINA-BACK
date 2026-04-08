@@ -22,6 +22,7 @@ namespace GestaoOficina.Data
         public DbSet<ServiceOrder> ServiceOrders { get; set; }
         public DbSet<ServiceOrderPart> ServiceOrderParts { get; set; }
         public DbSet<ServiceOrderTimeline> ServiceOrderTimelines { get; set; }
+        public DbSet<TenantUsage> TenantUsages { get; set; }
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
@@ -39,6 +40,7 @@ namespace GestaoOficina.Data
             modelBuilder.ApplyConfiguration(new ServiceOrderConfiguration());
             modelBuilder.ApplyConfiguration(new ServiceOrderPartConfiguration());
             modelBuilder.ApplyConfiguration(new ServiceOrderTimelineConfiguration());
+            modelBuilder.ApplyConfiguration(new TenantUsageConfiguration());
         }
     }
 }

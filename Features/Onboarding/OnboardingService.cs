@@ -42,6 +42,7 @@ namespace GestaoOficina.Features.Onboarding
             var tenant = new Tenant
             {
                 Name = dto.TenantName,
+                Plan = dto.Plan ?? TenantPlan.Basico,
                 CreatedAt = DateTime.UtcNow
             };
 

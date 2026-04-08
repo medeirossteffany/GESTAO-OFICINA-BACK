@@ -19,6 +19,7 @@ namespace GestaoOficina.Features.Tenants
             var tenant = new Tenant
             {
                 Name = dto.Name,
+                Plan = dto.Plan ?? TenantPlan.Basico,
                 CreatedAt = DateTime.UtcNow
             };
 
@@ -45,6 +46,9 @@ namespace GestaoOficina.Features.Tenants
             if (dto.Name is not null)
                 tenant.Name = dto.Name;
 
+            if (dto.Plan.HasValue)
+                tenant.Plan = dto.Plan.Value;
+
             if (dto.Cnpj is not null)
             {
                 if (tenant.Unit is null)
@@ -62,6 +66,25 @@ namespace GestaoOficina.Features.Tenants
                     _context.Units.Update(tenant.Unit);
                 }
             }
+
+            _context.Tenants.Update(tenant);
+            await _context.SaveChangesAsync();
+
+            return tenant;
+        }
+
+        public async Task<Tenant?> UpgradeTenantPlan(int id, TenantPlan targetPlan)
+        {
+            var tenant = await _context.Tenants
+                .Include(t => t.Unit)
+                .FirstOrDefaultAsync(t => t.Id == id);
+
+            if (tenant == null) return null;
+
+            if (targetPlan <= tenant.Plan)
+                throw new InvalidOperationException($"Upgrade inválido. Plano atual: {tenant.Plan}. Informe um plano superior.");
+
+            tenant.Plan = targetPlan;
 
             _context.Tenants.Update(tenant);
             await _context.SaveChangesAsync();

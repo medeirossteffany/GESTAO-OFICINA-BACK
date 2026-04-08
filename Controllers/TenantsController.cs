@@ -39,6 +39,7 @@ namespace GestaoOficina.Controllers
             return Ok(new
             {
                 tenant.Name,
+                tenant.Plan,
                 Cnpj = tenant.Unit?.Cnpj,
                 tenant.CreatedAt
             });
@@ -63,9 +64,43 @@ namespace GestaoOficina.Controllers
             return Ok(new
             {
                 tenant.Name,
+                tenant.Plan,
                 Cnpj = tenant.Unit?.Cnpj,
                 tenant.CreatedAt
             });
+        }
+
+        [HttpPatch("upgrade-plan")]
+        [Authorize(Roles = "Admin")]
+        public async Task<ActionResult> UpgradeTenantPlan(UpgradeTenantPlanRequest dto)
+        {
+            var tenantIdClaim = User.FindFirstValue("TenantId");
+            if (!int.TryParse(tenantIdClaim, out var tenantId))
+                return Unauthorized();
+
+            var fullAccess = bool.Parse(User.FindFirstValue("FullAccess") ?? "false");
+            if (!fullAccess)
+                return Forbid();
+
+            try
+            {
+                var tenant = await _service.UpgradeTenantPlan(tenantId, dto.Plan);
+                if (tenant == null)
+                    return NotFound();
+
+                return Ok(new
+                {
+                    Message = "Plano atualizado com sucesso.",
+                    tenant.Name,
+                    tenant.Plan,
+                    Cnpj = tenant.Unit?.Cnpj,
+                    tenant.CreatedAt
+                });
+            }
+            catch (InvalidOperationException ex)
+            {
+                return BadRequest(new { message = ex.Message });
+            }
         }
     }
 }

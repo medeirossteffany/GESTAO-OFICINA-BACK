@@ -2,16 +2,19 @@
 using GestaoOficina.DTOs.Customers;
 using GestaoOficina.Entities;
 using Microsoft.EntityFrameworkCore;
+using GestaoOficina.Features.Tenants;
 
 namespace GestaoOficina.Features.Customers
 {
     public class CustomerService
     {
         private readonly AppDbContext _context;
+        private readonly TenantPlanValidator _planValidator;
 
-        public CustomerService(AppDbContext context)
+        public CustomerService(AppDbContext context, TenantPlanValidator planValidator)
         {
             _context = context;
+            _planValidator = planValidator;
         }
 
         public async Task<List<Customer>> GetCustomersByTenantAndUnits(
@@ -83,6 +86,11 @@ namespace GestaoOficina.Features.Customers
 
                 if (existingCustomer != null)
                 {
+                    var wasInactive = !existingCustomer.IsActive;
+
+                    if (!existingCustomer.IsActive)
+                        await _planValidator.EnsureCanCreateCustomerAsync(tenantId);
+
                     existingCustomer.IsActive = true;
                     existingCustomer.LegalTypeId = dto.LegalTypeId;
                     existingCustomer.Name = dto.Name;
@@ -123,6 +131,11 @@ namespace GestaoOficina.Features.Customers
                     _context.Customers.Update(existingCustomer);
                     await _context.SaveChangesAsync();
 
+                    if (wasInactive)
+                    {
+                        await _planValidator.RegisterCustomerCreatedAsync(tenantId);
+                    }
+
                     var reloadedCustomer = await _context.Customers
                         .Include(c => c.CustomerUnits.Where(cu => cu.IsActive))
                         .FirstAsync(c => c.Id == existingCustomer.Id);
@@ -130,6 +143,8 @@ namespace GestaoOficina.Features.Customers
                     return (reloadedCustomer, false);
                 }
             }
+
+            await _planValidator.EnsureCanCreateCustomerAsync(tenantId);
 
             var customer = new Customer
             {
@@ -162,6 +177,7 @@ namespace GestaoOficina.Features.Customers
 
             _context.CustomerUnits.AddRange(links);
             await _context.SaveChangesAsync();
+            await _planValidator.RegisterCustomerCreatedAsync(tenantId);
 
             var reloadedNewCustomer = await _context.Customers
                 .Include(c => c.CustomerUnits.Where(cu => cu.IsActive))
@@ -293,6 +309,12 @@ namespace GestaoOficina.Features.Customers
             }
 
             await _context.SaveChangesAsync();
+
+            if (!customer.IsActive)
+            {
+                await _planValidator.RegisterCustomerDeletedAsync(customer.TenantId);
+            }
+
             return true;
         }
 

@@ -1,4 +1,5 @@
 ﻿using System.ComponentModel.DataAnnotations;
+using GestaoOficina.Entities;
 
 namespace GestaoOficina.DTOs.Onboarding
 {
@@ -6,6 +7,8 @@ namespace GestaoOficina.DTOs.Onboarding
     {
         [Required]
         public string TenantName { get; set; }
+
+        public TenantPlan? Plan { get; set; }
 
         public CreateUnitDto? Unit { get; set; }
 

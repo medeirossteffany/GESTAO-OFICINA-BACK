@@ -74,6 +74,7 @@ builder.Services.AddAuthorization();
 
 builder.Services.AddScoped<OnboardingService>();
 builder.Services.AddScoped<TenantService>();
+builder.Services.AddScoped<TenantPlanValidator>();
 builder.Services.AddScoped<UserService>();
 builder.Services.AddScoped<UnitService>();
 builder.Services.AddScoped<CustomerService>();

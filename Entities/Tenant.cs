@@ -19,5 +19,7 @@ namespace GestaoOficina.Entities
         public ICollection<ServiceOrder> ServiceOrders { get; set; }
         public ICollection<ServiceOrderPart> ServiceOrderParts { get; set; }
         public ICollection<ServiceOrderTimeline> ServiceOrderTimelines { get; set; }
+        public TenantUsage? Usage { get; set; }
+        public TenantPlan Plan { get; set; } = TenantPlan.Basico;
     }
 }

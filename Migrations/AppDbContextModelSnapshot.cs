@@ -436,6 +436,12 @@ namespace GestaoOficina.Migrations
                         .IsRequired()
                         .HasColumnType("longtext");
 
+                    b.Property<string>("Plan")
+                        .IsRequired()
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("longtext")
+                        .HasDefaultValue("Basico");
+
                     b.Property<int?>("UnitId")
                         .HasColumnType("int");
 
@@ -443,7 +449,10 @@ namespace GestaoOficina.Migrations
 
                     b.HasIndex("UnitId");
 
-                    b.ToTable("Tenants");
+                    b.ToTable("Tenants", null, t =>
+                        {
+                            t.HasCheckConstraint("CK_Tenants_Plan", "`Plan` IN ('Basico','Profissional','Premium')");
+                        });
                 });
 
             modelBuilder.Entity("GestaoOficina.Entities.Unit", b =>
@@ -547,7 +556,7 @@ namespace GestaoOficina.Migrations
                         .HasColumnType("longtext");
 
                     b.Property<string>("CpfCnpj")
-                        .HasColumnType("longtext");
+                        .HasColumnType("varchar(255)");
 
                     b.Property<DateTime>("CreatedAt")
                         .HasColumnType("datetime(6)");
@@ -616,20 +625,20 @@ namespace GestaoOficina.Migrations
 
                     b.HasKey("Id");
 
-                    b.HasIndex("Email")
+                    b.HasIndex("CpfCnpj")
                         .IsUnique()
-                        .HasFilter("[Email] IS NOT NULL");
+                        .HasDatabaseName("IX_AspNetUsers_CpfCnpj");
 
                     b.HasIndex("NormalizedEmail")
-                        .HasDatabaseName("EmailIndex");
+                        .IsUnique()
+                        .HasDatabaseName("IX_AspNetUsers_NormalizedEmail");
 
                     b.HasIndex("NormalizedUserName")
                         .IsUnique()
                         .HasDatabaseName("UserNameIndex");
 
                     b.HasIndex("PhoneNumber")
-                        .IsUnique()
-                        .HasFilter("[PhoneNumber] IS NOT NULL");
+                        .IsUnique();
 
                     b.HasIndex("TenantId");
 
