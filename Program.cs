@@ -35,6 +35,10 @@ var connectionString =
     $"password={Environment.GetEnvironmentVariable("DB_PASSWORD") ?? ""};" +
     "allowpublickeyretrieval=true;sslmode=none";
 
+var corsOriginsRaw = Environment.GetEnvironmentVariable("CORS_ORIGINS") ?? "http://localhost:4200";
+var corsOrigins = corsOriginsRaw
+    .Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries);
+
 builder.Services.AddDbContext<AppDbContext>(options =>
     options.UseMySql(connectionString, ServerVersion.AutoDetect(connectionString))
 );
@@ -88,7 +92,7 @@ builder.Services.AddCors(options =>
     options.AddPolicy("AllowFrontend", policy =>
     {
         policy
-            .WithOrigins("http://localhost:4200")
+            .WithOrigins(corsOrigins)
             .AllowAnyHeader()
             .AllowAnyMethod();
     });
