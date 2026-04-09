@@ -50,7 +50,6 @@ namespace GestaoOficina.Controllers
         }
 
         [HttpPost]
-        [Authorize(Roles = "Admin")]
         public async Task<ActionResult<VehicleResponse>> CreateVehicle(CreateVehicleRequest dto)
         {
             var loggedTenantId = int.Parse(User.FindFirstValue("TenantId"));
@@ -63,12 +62,11 @@ namespace GestaoOficina.Controllers
             var hasAccessToCustomer = _service.HasAccessToCustomer(customer, loggedTenantId, unitIds, fullAccess);
             if (!hasAccessToCustomer) return Forbid();
 
-            var vehicle = await _service.CreateVehicle(dto, loggedTenantId);
+            var vehicle = await _service.CreateVehicle(dto, loggedTenantId, unitIds, fullAccess);
             return CreatedAtAction(nameof(GetVehicle), new { id = vehicle.Id }, ToResponse(vehicle));
         }
 
         [HttpPatch("{id}")]
-        [Authorize(Roles = "Admin")]
         public async Task<ActionResult<VehicleResponse>> UpdateVehicle(int id, UpdateVehicleRequest dto)
         {
             var loggedTenantId = int.Parse(User.FindFirstValue("TenantId"));
@@ -97,7 +95,6 @@ namespace GestaoOficina.Controllers
         }
 
         [HttpDelete("{id}")]
-        [Authorize(Roles = "Admin")]
         public async Task<IActionResult> DeleteVehicle(int id)
         {
             var loggedTenantId = int.Parse(User.FindFirstValue("TenantId"));
@@ -106,6 +103,14 @@ namespace GestaoOficina.Controllers
 
             var vehicle = await _service.GetVehicleById(id);
             if (vehicle == null) return NotFound();
+
+            // Verifica se o usuário tem acesso ao cliente dono do veículo
+            var customer = vehicle.Customer;
+            if (customer == null)
+                return BadRequest("Cliente do veículo não encontrado.");
+
+            var hasAccessToCustomer = _service.HasAccessToCustomer(customer, loggedTenantId, unitIds, fullAccess);
+            if (!hasAccessToCustomer) return Forbid();
 
             var hasAccess = _service.HasAccessToVehicle(vehicle, loggedTenantId, unitIds, fullAccess);
             if (!hasAccess) return Forbid();

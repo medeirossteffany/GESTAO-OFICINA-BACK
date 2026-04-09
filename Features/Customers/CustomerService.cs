@@ -25,7 +25,7 @@ namespace GestaoOficina.Features.Customers
         {
             var query = _context.Customers
                 .Where(c => c.TenantId == tenantId && c.IsActive)
-                .Where(c => c.CustomerUnits.Any(cu => cu.IsActive)) 
+                .Where(c => c.CustomerUnits.Any(cu => cu.IsActive))
                 .Where(c => fullAccess || c.CustomerUnits.Any(cu => cu.IsActive && unitIds.Contains(cu.UnitId)))
                 .Include(c => c.CustomerUnits.Where(cu => cu.IsActive))
                 .AsQueryable();
@@ -45,6 +45,25 @@ namespace GestaoOficina.Features.Customers
             return await _context.Customers
                 .Include(c => c.CustomerUnits.Where(cu => cu.IsActive))
                 .FirstOrDefaultAsync(c => c.Id == id && c.IsActive && c.CustomerUnits.Any(cu => cu.IsActive));
+        }
+
+        public async Task<Customer?> GetCustomerByCpfCnpj(int tenantId, string cpfCnpj)
+        {
+            var rawDocument = cpfCnpj.Trim();
+            var normalizedDocument = new string(rawDocument.Where(char.IsDigit).ToArray());
+
+            if (string.IsNullOrWhiteSpace(rawDocument))
+                return null;
+
+            return await _context.Customers
+                .Include(c => c.CustomerUnits)
+                .FirstOrDefaultAsync(c =>
+                    c.TenantId == tenantId &&
+                    c.CpfCnpj != null &&
+                    (
+                        c.CpfCnpj == rawDocument ||
+                        c.CpfCnpj.Replace(".", "").Replace("-", "").Replace("/", "").Replace(" ", "") == normalizedDocument
+                    ));
         }
 
         public async Task<(Customer Customer, bool CreatedNew)> CreateOrLinkCustomer(
@@ -78,70 +97,86 @@ namespace GestaoOficina.Features.Customers
                 throw new InvalidOperationException("Uma ou mais lojas são inválidas para o tenant informado.");
             }
 
-            if (!string.IsNullOrWhiteSpace(dto.CpfCnpj))
+            var rawDocument = dto.CpfCnpj?.Trim();
+
+            if (string.IsNullOrWhiteSpace(rawDocument))
+                throw new InvalidOperationException("CPF/CNPJ inválido.");
+
+            var existingCustomer = await _context.Customers
+                .Include(c => c.CustomerUnits)
+                .FirstOrDefaultAsync(c =>
+                    c.TenantId == tenantId &&
+                    c.CpfCnpj != null &&
+                    c.CpfCnpj == rawDocument);
+
+            if (existingCustomer != null)
             {
-                var existingCustomer = await _context.Customers
-                    .Include(c => c.CustomerUnits)
-                    .FirstOrDefaultAsync(c => c.TenantId == tenantId && c.CpfCnpj == dto.CpfCnpj);
+                var wasInactive = !existingCustomer.IsActive;
 
-                if (existingCustomer != null)
+                if (!existingCustomer.IsActive)
+                    await _planValidator.EnsureCanCreateCustomerAsync(tenantId);
+
+                existingCustomer.IsActive = true;
+                existingCustomer.LegalTypeId = dto.LegalTypeId;
+                existingCustomer.Name = dto.Name;
+                existingCustomer.CpfCnpj = rawDocument;
+                existingCustomer.Email = dto.Email;
+                existingCustomer.Phone = dto.Phone;
+                existingCustomer.AddressZip = dto.AddressZip;
+                existingCustomer.AddressStreet = dto.AddressStreet;
+                existingCustomer.AddressNumber = dto.AddressNumber;
+                existingCustomer.AddressDistrict = dto.AddressDistrict;
+                existingCustomer.AddressCity = dto.AddressCity;
+                existingCustomer.AddressState = dto.AddressState;
+                existingCustomer.Notes = dto.Notes;
+
+                foreach (var unitId in targetUnitIds)
                 {
-                    var wasInactive = !existingCustomer.IsActive;
+                    var activeLink = existingCustomer.CustomerUnits
+                        .FirstOrDefault(cu => cu.UnitId == unitId && cu.IsActive);
 
-                    if (!existingCustomer.IsActive)
-                        await _planValidator.EnsureCanCreateCustomerAsync(tenantId);
+                    var inactiveLink = existingCustomer.CustomerUnits
+                        .FirstOrDefault(cu => cu.UnitId == unitId && !cu.IsActive);
 
-                    existingCustomer.IsActive = true;
-                    existingCustomer.LegalTypeId = dto.LegalTypeId;
-                    existingCustomer.Name = dto.Name;
-                    existingCustomer.Email = dto.Email;
-                    existingCustomer.Phone = dto.Phone;
-                    existingCustomer.AddressZip = dto.AddressZip;
-                    existingCustomer.AddressStreet = dto.AddressStreet;
-                    existingCustomer.AddressNumber = dto.AddressNumber;
-                    existingCustomer.AddressDistrict = dto.AddressDistrict;
-                    existingCustomer.AddressCity = dto.AddressCity;
-                    existingCustomer.AddressState = dto.AddressState;
-                    existingCustomer.Notes = dto.Notes;
-
-                    foreach (var unitId in targetUnitIds)
+                    if (activeLink == null && inactiveLink == null)
                     {
-                        var activeLink = existingCustomer.CustomerUnits
-                            .FirstOrDefault(cu => cu.UnitId == unitId && cu.IsActive);
-
-                        var inactiveLink = existingCustomer.CustomerUnits
-                            .FirstOrDefault(cu => cu.UnitId == unitId && !cu.IsActive);
-
-                        if (activeLink == null && inactiveLink == null)
+                        _context.CustomerUnits.Add(new CustomerUnit
                         {
-                            _context.CustomerUnits.Add(new CustomerUnit
-                            {
-                                CustomerId = existingCustomer.Id,
-                                UnitId = unitId,
-                                IsActive = true
-                            });
-                        }
-                        else if (inactiveLink != null)
-                        {
-                            inactiveLink.IsActive = true;
-                            _context.CustomerUnits.Update(inactiveLink);
-                        }
+                            CustomerId = existingCustomer.Id,
+                            UnitId = unitId,
+                            IsActive = true
+                        });
                     }
-
-                    _context.Customers.Update(existingCustomer);
-                    await _context.SaveChangesAsync();
-
-                    if (wasInactive)
+                    else if (inactiveLink != null)
                     {
-                        await _planValidator.RegisterCustomerCreatedAsync(tenantId);
+                        inactiveLink.IsActive = true;
+                        _context.CustomerUnits.Update(inactiveLink);
                     }
-
-                    var reloadedCustomer = await _context.Customers
-                        .Include(c => c.CustomerUnits.Where(cu => cu.IsActive))
-                        .FirstAsync(c => c.Id == existingCustomer.Id);
-
-                    return (reloadedCustomer, false);
                 }
+
+                var inactiveVehicles = await _context.Vehicles
+                    .Where(v => v.CustomerId == existingCustomer.Id && !v.IsActive)
+                    .ToListAsync();
+
+                foreach (var vehicle in inactiveVehicles)
+                {
+                    vehicle.IsActive = true;
+                    _context.Vehicles.Update(vehicle);
+                }
+
+                _context.Customers.Update(existingCustomer);
+                await _context.SaveChangesAsync();
+
+                if (wasInactive)
+                {
+                    await _planValidator.RegisterCustomerCreatedAsync(tenantId);
+                }
+
+                var reloadedCustomer = await _context.Customers
+                    .Include(c => c.CustomerUnits.Where(cu => cu.IsActive))
+                    .FirstAsync(c => c.Id == existingCustomer.Id);
+
+                return (reloadedCustomer, false);
             }
 
             await _planValidator.EnsureCanCreateCustomerAsync(tenantId);
@@ -151,7 +186,7 @@ namespace GestaoOficina.Features.Customers
                 TenantId = tenantId,
                 LegalTypeId = dto.LegalTypeId,
                 Name = dto.Name,
-                CpfCnpj = dto.CpfCnpj,
+                CpfCnpj = rawDocument,
                 Email = dto.Email,
                 Phone = dto.Phone,
                 AddressZip = dto.AddressZip,
@@ -263,6 +298,17 @@ namespace GestaoOficina.Features.Customers
             }
 
             if (dto.Name is not null) customer.Name = dto.Name;
+
+            if (dto.CpfCnpj is not null)
+            {
+                var rawDocument = dto.CpfCnpj.Trim();
+
+                if (string.IsNullOrWhiteSpace(rawDocument))
+                    throw new InvalidOperationException("CPF/CNPJ inválido.");
+
+                customer.CpfCnpj = rawDocument;
+            }
+
             if (dto.Email is not null) customer.Email = dto.Email;
             if (dto.Phone is not null) customer.Phone = dto.Phone;
             if (dto.AddressZip is not null) customer.AddressZip = dto.AddressZip;
@@ -321,7 +367,7 @@ namespace GestaoOficina.Features.Customers
         public bool HasAccessToCustomer(Customer customer, int tenantId, List<int> unitIds, bool fullAccess)
         {
             if (customer.TenantId != tenantId || !customer.IsActive) return false;
-            if (!customer.CustomerUnits.Any(cu => cu.IsActive)) return false; 
+            if (!customer.CustomerUnits.Any(cu => cu.IsActive)) return false;
             if (fullAccess) return true;
 
             return customer.CustomerUnits.Any(cu => cu.IsActive && unitIds.Contains(cu.UnitId));

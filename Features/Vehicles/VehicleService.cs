@@ -3,6 +3,7 @@ using GestaoOficina.DTOs.Vehicles;
 using GestaoOficina.Entities;
 using Microsoft.EntityFrameworkCore;
 using GestaoOficina.Features.Tenants;
+using GestaoOficina.Features.Customers;
 
 namespace GestaoOficina.Features.Vehicles
 {
@@ -10,11 +11,13 @@ namespace GestaoOficina.Features.Vehicles
     {
         private readonly AppDbContext _context;
         private readonly TenantPlanValidator _planValidator;
+        private readonly CustomerService _customerService;
 
-        public VehicleService(AppDbContext context, TenantPlanValidator planValidator)
+        public VehicleService(AppDbContext context, TenantPlanValidator planValidator, CustomerService customerService)
         {
             _context = context;
             _planValidator = planValidator;
+            _customerService = customerService;
         }
 
         public async Task<List<Vehicle>> GetVehiclesByTenantAndUnits(
@@ -57,13 +60,14 @@ namespace GestaoOficina.Features.Vehicles
                 .FirstOrDefaultAsync(c => c.Id == customerId && c.TenantId == tenantId && c.IsActive);
         }
 
-        public async Task<Vehicle> CreateVehicle(CreateVehicleRequest dto, int tenantId)
+        public async Task<Vehicle> CreateVehicle(CreateVehicleRequest dto, int tenantId, List<int> unitIds, bool fullAccess)
         {
-            var customer = await GetCustomerById(dto.CustomerId, tenantId);
+            var customer = await _customerService.GetCustomerById(dto.CustomerId);
             if (customer == null)
-            {
-                throw new InvalidOperationException("Cliente inválido para o tenant informado.");
-            }
+                throw new InvalidOperationException("Cliente não encontrado.");
+
+            if (!_customerService.HasAccessToCustomer(customer, tenantId, unitIds, fullAccess))
+                throw new InvalidOperationException("Você não tem permissão para cadastrar veículo para este cliente.");
 
             var existingVehicle = await _context.Vehicles
                 .FirstOrDefaultAsync(v => v.TenantId == tenantId && v.Plate == dto.Plate);

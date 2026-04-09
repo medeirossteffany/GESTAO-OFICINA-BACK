@@ -49,8 +49,21 @@ namespace GestaoOficina.Controllers
             return Ok(ToResponse(customer));
         }
 
+        [HttpGet("by-document/{cpfCnpj}")]
+        public async Task<ActionResult<CustomerResponse>> GetCustomerByCpfCnpj(string cpfCnpj)
+        {
+            if (string.IsNullOrWhiteSpace(cpfCnpj))
+                return BadRequest("CPF/CNPJ é obrigatório.");
+
+            var loggedTenantId = int.Parse(User.FindFirstValue("TenantId"));
+
+            var customer = await _service.GetCustomerByCpfCnpj(loggedTenantId, cpfCnpj);
+            if (customer == null) return NotFound();
+
+            return Ok(ToResponse(customer));
+        }
+
         [HttpPost]
-        [Authorize(Roles = "Admin")]
         public async Task<ActionResult<CustomerResponse>> CreateCustomer(CreateCustomerRequest dto)
         {
             var loggedTenantId = int.Parse(User.FindFirstValue("TenantId"));
@@ -68,8 +81,16 @@ namespace GestaoOficina.Controllers
             if (targetUnitIds.Count == 0)
                 return BadRequest("Informe ao menos uma loja em unitId ou unitIds.");
 
+            // Corrigido: só bloqueia se não for fullAccess
             if (!fullAccess && targetUnitIds.Any(id => !unitIds.Contains(id)))
-                return Forbid();
+            {
+                return StatusCode(StatusCodes.Status403Forbidden, new
+                {
+                    message = "Usuário não possui acesso às lojas informadas.",
+                    allowedUnitIds = unitIds,
+                    requestedUnitIds = targetUnitIds
+                });
+            }
 
             var (customer, createdNew) = await _service.CreateOrLinkCustomer(dto, loggedTenantId, targetUnitIds);
             var response = ToResponse(customer);
@@ -81,7 +102,6 @@ namespace GestaoOficina.Controllers
         }
 
         [HttpPatch("{id}")]
-        [Authorize(Roles = "Admin")]
         public async Task<ActionResult<CustomerResponse>> UpdateCustomer(int id, UpdateCustomerRequest dto)
         {
             var loggedTenantId = int.Parse(User.FindFirstValue("TenantId"));
@@ -117,7 +137,6 @@ namespace GestaoOficina.Controllers
         }
 
         [HttpDelete("{id}")]
-        [Authorize(Roles = "Admin")]
         public async Task<IActionResult> DeleteCustomer(int id)
         {
             var loggedTenantId = int.Parse(User.FindFirstValue("TenantId"));

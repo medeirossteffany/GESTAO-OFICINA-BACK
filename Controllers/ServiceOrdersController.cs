@@ -4,6 +4,7 @@ using GestaoOficina.Entities;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using GestaoOficina.Features.ServiceOrders;
+using GestaoOficina.Features.Vehicles;
 
 namespace GestaoOficina.Controllers
 {
@@ -15,15 +16,19 @@ namespace GestaoOficina.Controllers
         private readonly ServiceOrderService _service;
         private readonly ServiceOrderPdfService _pdfService;
         private readonly ServiceOrderExcelService _excelService;
+        private readonly VehicleService _vehicleService; 
 
         public ServiceOrdersController(
             ServiceOrderService service,
             ServiceOrderPdfService pdfService,
-            ServiceOrderExcelService excelService)
+            ServiceOrderExcelService excelService,
+            VehicleService vehicleService 
+        )
         {
             _service = service;
             _pdfService = pdfService;
             _excelService = excelService;
+            _vehicleService = vehicleService;
         }
 
         [HttpPost("import/excel/resumo")]
@@ -61,7 +66,6 @@ namespace GestaoOficina.Controllers
         }
 
         [HttpPost]
-        [Authorize(Roles = "Admin")]
         public async Task<IActionResult> CreateServiceOrder([FromBody] CreateServiceOrderRequest dto)
         {
             if (!ModelState.IsValid)
@@ -74,13 +78,23 @@ namespace GestaoOficina.Controllers
             if (!fullAccess && !unitIds.Contains(dto.UnitId))
                 return Forbid();
 
+            var vehicle = await _vehicleService.GetVehicleById(dto.VehicleId);
+            if (vehicle == null)
+                return BadRequest("Veículo não encontrado.");
+            var customer = vehicle.Customer;
+            if (customer == null)
+                return BadRequest("Cliente do veículo não encontrado.");
+            var hasAccessToCustomer = _vehicleService.HasAccessToCustomer(customer, loggedTenantId, unitIds, fullAccess);
+            if (!hasAccessToCustomer) return Forbid();
+            var hasAccessToVehicle = _vehicleService.HasAccessToVehicle(vehicle, loggedTenantId, unitIds, fullAccess);
+            if (!hasAccessToVehicle) return Forbid();
+
             var created = await _service.CreateServiceOrder(dto, loggedTenantId, unitIds, fullAccess);
 
             return CreatedAtAction(nameof(GetServiceOrderById), new { id = created.Id }, ToResponse(created));
         }
 
         [HttpPatch("{id}")]
-        [Authorize(Roles = "Admin")]
         public async Task<IActionResult> UpdateServiceOrder(int id, [FromBody] UpdateServiceOrderRequest dto)
         {
             if (!ModelState.IsValid)
@@ -116,7 +130,6 @@ namespace GestaoOficina.Controllers
         }
 
         [HttpDelete("{id}")]
-        [Authorize(Roles = "Admin")]
         public async Task<IActionResult> DeleteServiceOrder(int id)
         {
             var loggedTenantId = int.Parse(User.FindFirstValue("TenantId"));
