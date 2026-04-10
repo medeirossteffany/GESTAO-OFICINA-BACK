@@ -23,6 +23,7 @@ namespace GestaoOficina.Data
         public DbSet<ServiceOrderPart> ServiceOrderParts { get; set; }
         public DbSet<ServiceOrderTimeline> ServiceOrderTimelines { get; set; }
         public DbSet<TenantUsage> TenantUsages { get; set; }
+        public DbSet<PasswordResetCode> PasswordResetCodes { get; set; }
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
@@ -41,6 +42,7 @@ namespace GestaoOficina.Data
             modelBuilder.ApplyConfiguration(new ServiceOrderPartConfiguration());
             modelBuilder.ApplyConfiguration(new ServiceOrderTimelineConfiguration());
             modelBuilder.ApplyConfiguration(new TenantUsageConfiguration());
+            modelBuilder.ApplyConfiguration(new PasswordResetCodeConfiguration());
         }
     }
 }

@@ -2,7 +2,6 @@
 using Microsoft.AspNetCore.Authorization;
 using GestaoOficina.DTOs.Units;
 using GestaoOficina.Features.Units;
-using GestaoOficina.Entities;
 using System.Security.Claims;
 
 namespace GestaoOficina.Controllers

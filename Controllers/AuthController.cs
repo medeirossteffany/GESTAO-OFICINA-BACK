@@ -8,6 +8,7 @@ using System.Security.Claims;
 using GestaoOficina.DTOs.Auth;
 using GestaoOficina.Data;
 using Microsoft.EntityFrameworkCore;
+using GestaoOficina.Features.Auth;
 
 namespace GestaoOficina.Controllers
 {
@@ -19,13 +20,15 @@ namespace GestaoOficina.Controllers
         private readonly UserManager<User> _userManager;
         private readonly IConfiguration _config;
         private readonly AppDbContext _context;
+        private readonly PasswordResetService _passwordResetService;
 
-        public AuthController(SignInManager<User> signInManager, UserManager<User> userManager, IConfiguration config, AppDbContext context)
+        public AuthController(SignInManager<User> signInManager, UserManager<User> userManager, IConfiguration config, AppDbContext context, PasswordResetService passwordResetService)
         {
             _signInManager = signInManager;
             _userManager = userManager;
             _config = config;
             _context = context;
+            _passwordResetService = passwordResetService;
         }
 
         [HttpPost("login")]
@@ -76,6 +79,34 @@ namespace GestaoOficina.Controllers
             );
 
             return Ok(new { token = new JwtSecurityTokenHandler().WriteToken(token) });
+        }
+
+        [HttpPost("forgot-password")]
+        public async Task<IActionResult> ForgotPassword([FromBody] ForgotPasswordRequest dto)
+        {
+            var user = await _userManager.FindByEmailAsync(dto.Email);
+            if (user == null)
+                return NotFound("Usuário com este email não encontrado.");
+            await _passwordResetService.GenerateAndSendCodeAsync(dto.Email);
+            return Ok();
+        }
+
+        [HttpPost("verify-reset-code")]
+        public async Task<IActionResult> VerifyResetCode([FromBody] VerifyResetCodeRequest dto)
+        {
+            var valid = await _passwordResetService.ValidateCodeAsync(dto.Email, dto.Code);
+            if (!valid) return BadRequest("Código inválido ou expirado.");
+            return Ok();
+        }
+
+        [HttpPost("reset-password")]
+        public async Task<IActionResult> ResetPassword([FromBody] ResetPasswordRequest dto)
+        {
+            if (dto.NewPassword != dto.ConfirmPassword)
+                return BadRequest("As senhas não coincidem.");
+            var success = await _passwordResetService.ResetPasswordAsync(dto.Email, dto.Code, dto.NewPassword);
+            if (!success) return BadRequest("Código inválido, expirado ou usuário não encontrado.");
+            return Ok();
         }
     }
 }

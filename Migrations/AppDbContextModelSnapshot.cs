@@ -183,6 +183,34 @@ namespace GestaoOficina.Migrations
                     b.ToTable("CustomerUnits");
                 });
 
+            modelBuilder.Entity("GestaoOficina.Entities.PasswordResetCode", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    MySqlPropertyBuilderExtensions.UseMySqlIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<string>("Code")
+                        .IsRequired()
+                        .HasMaxLength(5)
+                        .HasColumnType("varchar(5)");
+
+                    b.Property<string>("Email")
+                        .IsRequired()
+                        .HasColumnType("longtext");
+
+                    b.Property<DateTime>("Expiration")
+                        .HasColumnType("datetime(6)");
+
+                    b.Property<bool>("Used")
+                        .HasColumnType("tinyint(1)");
+
+                    b.HasKey("Id");
+
+                    b.ToTable("PasswordResetCodes");
+                });
+
             modelBuilder.Entity("GestaoOficina.Entities.ServiceOrder", b =>
                 {
                     b.Property<int>("Id")
@@ -453,6 +481,47 @@ namespace GestaoOficina.Migrations
                         {
                             t.HasCheckConstraint("CK_Tenants_Plan", "`Plan` IN ('Basico','Profissional','Premium')");
                         });
+                });
+
+            modelBuilder.Entity("GestaoOficina.Entities.TenantUsage", b =>
+                {
+                    b.Property<int>("TenantId")
+                        .HasColumnType("int");
+
+                    b.Property<int>("CurrentCustomers")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int")
+                        .HasDefaultValue(0);
+
+                    b.Property<int>("CurrentServicesInMonth")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int")
+                        .HasDefaultValue(0);
+
+                    b.Property<int>("CurrentUnits")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int")
+                        .HasDefaultValue(0);
+
+                    b.Property<int>("CurrentUsers")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int")
+                        .HasDefaultValue(0);
+
+                    b.Property<int>("CurrentVehicles")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int")
+                        .HasDefaultValue(0);
+
+                    b.Property<DateTime>("ServicesMonthReference")
+                        .HasColumnType("datetime(6)");
+
+                    b.Property<DateTime>("UpdatedAt")
+                        .HasColumnType("datetime(6)");
+
+                    b.HasKey("TenantId");
+
+                    b.ToTable("TenantUsages", (string)null);
                 });
 
             modelBuilder.Entity("GestaoOficina.Entities.Unit", b =>
@@ -1029,6 +1098,17 @@ namespace GestaoOficina.Migrations
                     b.Navigation("Unit");
                 });
 
+            modelBuilder.Entity("GestaoOficina.Entities.TenantUsage", b =>
+                {
+                    b.HasOne("GestaoOficina.Entities.Tenant", "Tenant")
+                        .WithOne("Usage")
+                        .HasForeignKey("GestaoOficina.Entities.TenantUsage", "TenantId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Tenant");
+                });
+
             modelBuilder.Entity("GestaoOficina.Entities.Unit", b =>
                 {
                     b.HasOne("GestaoOficina.Entities.Tenant", "Tenant")
@@ -1167,6 +1247,8 @@ namespace GestaoOficina.Migrations
                     b.Navigation("ServiceOrders");
 
                     b.Navigation("Units");
+
+                    b.Navigation("Usage");
 
                     b.Navigation("Users");
 

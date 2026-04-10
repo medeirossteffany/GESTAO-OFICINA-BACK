@@ -173,7 +173,6 @@ namespace GestaoOficina.Controllers
             if (!int.TryParse(loggedUserIdStr, out var loggedUserId))
                 return Unauthorized();
 
-            // Impede que o usuário delete o próprio perfil
             if (loggedUserId == id)
                 return BadRequest("Você não pode excluir o próprio usuário logado.");
 

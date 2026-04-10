@@ -15,6 +15,7 @@ using GestaoOficina.Features.Customers;
 using GestaoOficina.Features.Vehicles;
 using GestaoOficina.Features.ServiceOrders;
 using DotNetEnv;
+using GestaoOficina.Features.Auth;
 
 Env.Load();
 
@@ -86,6 +87,7 @@ builder.Services.AddScoped<VehicleService>();
 builder.Services.AddScoped<ServiceOrderService>();
 builder.Services.AddScoped<ServiceOrderPdfService>();
 builder.Services.AddScoped<ServiceOrderExcelService>();
+builder.Services.AddScoped<PasswordResetService>();
 
 builder.Services.AddCors(options =>
 {
