@@ -62,8 +62,15 @@ namespace GestaoOficina.Controllers
             var hasAccessToCustomer = _service.HasAccessToCustomer(customer, loggedTenantId, unitIds, fullAccess);
             if (!hasAccessToCustomer) return Forbid();
 
-            var vehicle = await _service.CreateVehicle(dto, loggedTenantId, unitIds, fullAccess);
-            return CreatedAtAction(nameof(GetVehicle), new { id = vehicle.Id }, ToResponse(vehicle));
+            try
+            {
+                var vehicle = await _service.CreateVehicle(dto, loggedTenantId, unitIds, fullAccess);
+                return CreatedAtAction(nameof(GetVehicle), new { id = vehicle.Id }, ToResponse(vehicle));
+            }
+            catch (InvalidOperationException ex)
+            {
+                return StatusCode(StatusCodes.Status403Forbidden, new { message = ex.Message });
+            }
         }
 
         [HttpPatch("{id}")]
