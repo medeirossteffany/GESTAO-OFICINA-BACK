@@ -2,6 +2,7 @@
 using Microsoft.AspNetCore.Authorization;
 using GestaoOficina.DTOs.Users;
 using GestaoOficina.Features.Users;
+using GestaoOficina.Features.Tenants;
 using GestaoOficina.Entities;
 using System.Security.Claims;
 
@@ -66,6 +67,7 @@ namespace GestaoOficina.Controllers
         }
 
         [HttpPost]
+        [ServiceFilter(typeof(RequireActivePlanAttribute))]
         [Authorize(Roles = "Admin")]
         public async Task<ActionResult<UserResponse>> CreateUser(CreateUserRequest dto)
         {
@@ -111,6 +113,7 @@ namespace GestaoOficina.Controllers
         }
 
         [HttpPatch("{id}")]
+        [ServiceFilter(typeof(RequireActivePlanAttribute))]
         [Authorize(Roles = "Admin")]
         public async Task<ActionResult<UserResponse>> UpdateUser(int id, UpdateUserRequest dto)
         {
@@ -166,6 +169,7 @@ namespace GestaoOficina.Controllers
         }
 
         [HttpDelete("{id}")]
+        [ServiceFilter(typeof(RequireActivePlanAttribute))]
         [Authorize(Roles = "Admin")]
         public async Task<ActionResult> DeleteUser(int id)
         {
@@ -230,6 +234,7 @@ namespace GestaoOficina.Controllers
         }
 
         [HttpPatch("me")]
+        [ServiceFilter(typeof(RequireActivePlanAttribute))]
         public async Task<ActionResult<UserResponse>> UpdateMyProfile(UpdateUserProfileRequest dto)
         {
             var userIdStr = User.FindFirstValue(ClaimTypes.NameIdentifier);

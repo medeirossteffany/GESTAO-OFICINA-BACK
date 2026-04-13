@@ -54,6 +54,25 @@ namespace GestaoOficina.Migrations
                 .Annotation("MySql:CharSet", "utf8mb4");
 
             migrationBuilder.CreateTable(
+                name: "PasswordResetCodes",
+                columns: table => new
+                {
+                    Id = table.Column<int>(type: "int", nullable: false)
+                        .Annotation("MySql:ValueGenerationStrategy", MySqlValueGenerationStrategy.IdentityColumn),
+                    Email = table.Column<string>(type: "longtext", nullable: false)
+                        .Annotation("MySql:CharSet", "utf8mb4"),
+                    Code = table.Column<string>(type: "varchar(5)", maxLength: 5, nullable: false)
+                        .Annotation("MySql:CharSet", "utf8mb4"),
+                    Expiration = table.Column<DateTime>(type: "datetime(6)", nullable: false),
+                    Used = table.Column<bool>(type: "tinyint(1)", nullable: false)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_PasswordResetCodes", x => x.Id);
+                })
+                .Annotation("MySql:CharSet", "utf8mb4");
+
+            migrationBuilder.CreateTable(
                 name: "ServiceOrderStatus",
                 columns: table => new
                 {
@@ -159,7 +178,7 @@ namespace GestaoOficina.Migrations
                     TenantId = table.Column<int>(type: "int", nullable: false),
                     Name = table.Column<string>(type: "longtext", nullable: false)
                         .Annotation("MySql:CharSet", "utf8mb4"),
-                    CpfCnpj = table.Column<string>(type: "longtext", nullable: true)
+                    CpfCnpj = table.Column<string>(type: "varchar(255)", nullable: true)
                         .Annotation("MySql:CharSet", "utf8mb4"),
                     AddressZip = table.Column<string>(type: "longtext", nullable: true)
                         .Annotation("MySql:CharSet", "utf8mb4"),
@@ -302,7 +321,8 @@ namespace GestaoOficina.Migrations
                     Id = table.Column<int>(type: "int", nullable: false)
                         .Annotation("MySql:ValueGenerationStrategy", MySqlValueGenerationStrategy.IdentityColumn),
                     CustomerId = table.Column<int>(type: "int", nullable: false),
-                    UnitId = table.Column<int>(type: "int", nullable: false)
+                    UnitId = table.Column<int>(type: "int", nullable: false),
+                    IsActive = table.Column<bool>(type: "tinyint(1)", nullable: false, defaultValue: true)
                 },
                 constraints: table =>
                 {
@@ -329,6 +349,7 @@ namespace GestaoOficina.Migrations
                     Quantity = table.Column<decimal>(type: "decimal(65,30)", nullable: false),
                     UnitPrice = table.Column<decimal>(type: "decimal(65,30)", nullable: false),
                     TotalPrice = table.Column<decimal>(type: "decimal(65,30)", nullable: false),
+                    IsActive = table.Column<bool>(type: "tinyint(1)", nullable: false, defaultValue: true),
                     CreatedAt = table.Column<DateTime>(type: "datetime(6)", nullable: false)
                 },
                 constraints: table =>
@@ -357,6 +378,9 @@ namespace GestaoOficina.Migrations
                     PaintDescription = table.Column<string>(type: "longtext", nullable: true)
                         .Annotation("MySql:CharSet", "utf8mb4"),
                     PaintValue = table.Column<decimal>(type: "decimal(65,30)", nullable: false, defaultValue: 0m),
+                    MechanicsDescription = table.Column<string>(type: "longtext", nullable: true)
+                        .Annotation("MySql:CharSet", "utf8mb4"),
+                    MechanicsValue = table.Column<decimal>(type: "decimal(65,30)", nullable: false, defaultValue: 0m),
                     PartsValue = table.Column<decimal>(type: "decimal(65,30)", nullable: false, defaultValue: 0m),
                     TotalAmount = table.Column<decimal>(type: "decimal(65,30)", nullable: false),
                     IsActive = table.Column<bool>(type: "tinyint(1)", nullable: false, defaultValue: true),
@@ -396,6 +420,7 @@ namespace GestaoOficina.Migrations
                         .Annotation("MySql:CharSet", "utf8mb4"),
                     OldStatusId = table.Column<int>(type: "int", nullable: true),
                     NewStatusId = table.Column<int>(type: "int", nullable: true),
+                    IsActive = table.Column<bool>(type: "tinyint(1)", nullable: false, defaultValue: true),
                     CreatedAt = table.Column<DateTime>(type: "datetime(6)", nullable: false)
                 },
                 constraints: table =>
@@ -405,7 +430,8 @@ namespace GestaoOficina.Migrations
                         name: "FK_ServiceOrderTimelines_AspNetUsers_UserId",
                         column: x => x.UserId,
                         principalTable: "AspNetUsers",
-                        principalColumn: "Id");
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.SetNull);
                     table.ForeignKey(
                         name: "FK_ServiceOrderTimelines_ServiceOrderStatus_NewStatusId",
                         column: x => x.NewStatusId,
@@ -435,12 +461,38 @@ namespace GestaoOficina.Migrations
                         .Annotation("MySql:CharSet", "utf8mb4"),
                     UnitId = table.Column<int>(type: "int", nullable: true),
                     CreatedAt = table.Column<DateTime>(type: "datetime(6)", nullable: false),
-                    Plan = table.Column<string>(type: "longtext", nullable: false)
+                    Plan = table.Column<string>(type: "longtext", nullable: false, defaultValue: "Basico")
                         .Annotation("MySql:CharSet", "utf8mb4")
                 },
                 constraints: table =>
                 {
                     table.PrimaryKey("PK_Tenants", x => x.Id);
+                    table.CheckConstraint("CK_Tenants_Plan", "`Plan` IN ('Basico','Profissional','Premium')");
+                })
+                .Annotation("MySql:CharSet", "utf8mb4");
+
+            migrationBuilder.CreateTable(
+                name: "TenantUsages",
+                columns: table => new
+                {
+                    TenantId = table.Column<int>(type: "int", nullable: false),
+                    CurrentUnits = table.Column<int>(type: "int", nullable: false, defaultValue: 0),
+                    CurrentUsers = table.Column<int>(type: "int", nullable: false, defaultValue: 0),
+                    CurrentCustomers = table.Column<int>(type: "int", nullable: false, defaultValue: 0),
+                    CurrentVehicles = table.Column<int>(type: "int", nullable: false, defaultValue: 0),
+                    CurrentServicesInMonth = table.Column<int>(type: "int", nullable: false, defaultValue: 0),
+                    ServicesMonthReference = table.Column<DateTime>(type: "datetime(6)", nullable: false),
+                    UpdatedAt = table.Column<DateTime>(type: "datetime(6)", nullable: false)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_TenantUsages", x => x.TenantId);
+                    table.ForeignKey(
+                        name: "FK_TenantUsages_Tenants_TenantId",
+                        column: x => x.TenantId,
+                        principalTable: "Tenants",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Cascade);
                 })
                 .Annotation("MySql:CharSet", "utf8mb4");
 
@@ -467,12 +519,12 @@ namespace GestaoOficina.Migrations
                         .Annotation("MySql:CharSet", "utf8mb4"),
                     AddressState = table.Column<string>(type: "longtext", nullable: false)
                         .Annotation("MySql:CharSet", "utf8mb4"),
-                    CreatedAt = table.Column<DateTime>(type: "datetime(6)", nullable: false),
                     Email = table.Column<string>(type: "varchar(255)", maxLength: 255, nullable: true)
                         .Annotation("MySql:CharSet", "utf8mb4"),
                     Phone = table.Column<string>(type: "varchar(30)", maxLength: 30, nullable: true)
                         .Annotation("MySql:CharSet", "utf8mb4"),
-                    IsActive = table.Column<bool>(type: "tinyint(1)", nullable: false, defaultValue: true)
+                    IsActive = table.Column<bool>(type: "tinyint(1)", nullable: false, defaultValue: true),
+                    CreatedAt = table.Column<DateTime>(type: "datetime(6)", nullable: false)
                 },
                 constraints: table =>
                 {
@@ -539,7 +591,8 @@ namespace GestaoOficina.Migrations
                     Id = table.Column<int>(type: "int", nullable: false)
                         .Annotation("MySql:ValueGenerationStrategy", MySqlValueGenerationStrategy.IdentityColumn),
                     UserId = table.Column<int>(type: "int", nullable: false),
-                    UnitId = table.Column<int>(type: "int", nullable: false)
+                    UnitId = table.Column<int>(type: "int", nullable: false),
+                    IsActive = table.Column<bool>(type: "tinyint(1)", nullable: false, defaultValue: true)
                 },
                 constraints: table =>
                 {
@@ -554,50 +607,6 @@ namespace GestaoOficina.Migrations
                         name: "FK_UserUnits_Units_UnitId",
                         column: x => x.UnitId,
                         principalTable: "Units",
-                        principalColumn: "Id",
-                        onDelete: ReferentialAction.Cascade);
-                })
-                .Annotation("MySql:CharSet", "utf8mb4");
-
-            migrationBuilder.CreateTable(
-                name: "PasswordResetCodes",
-                columns: table => new
-                {
-                    Id = table.Column<int>(type: "int", nullable: false)
-                        .Annotation("MySql:ValueGenerationStrategy", MySqlValueGenerationStrategy.IdentityColumn),
-                    Email = table.Column<string>(type: "longtext", nullable: false)
-                        .Annotation("MySql:CharSet", "utf8mb4"),
-                    Code = table.Column<string>(type: "varchar(5)", maxLength: 5, nullable: false)
-                        .Annotation("MySql:CharSet", "utf8mb4"),
-                    Expiration = table.Column<DateTime>(type: "datetime(6)", nullable: false),
-                    Used = table.Column<bool>(type: "tinyint(1)", nullable: false)
-                },
-                constraints: table =>
-                {
-                    table.PrimaryKey("PK_PasswordResetCodes", x => x.Id);
-                })
-                .Annotation("MySql:CharSet", "utf8mb4");
-
-            migrationBuilder.CreateTable(
-                name: "TenantUsages",
-                columns: table => new
-                {
-                    TenantId = table.Column<int>(type: "int", nullable: false),
-                    CurrentUnits = table.Column<int>(type: "int", nullable: false, defaultValue: 0),
-                    CurrentUsers = table.Column<int>(type: "int", nullable: false, defaultValue: 0),
-                    CurrentCustomers = table.Column<int>(type: "int", nullable: false, defaultValue: 0),
-                    CurrentVehicles = table.Column<int>(type: "int", nullable: false, defaultValue: 0),
-                    CurrentServicesInMonth = table.Column<int>(type: "int", nullable: false, defaultValue: 0),
-                    ServicesMonthReference = table.Column<DateTime>(type: "datetime(6)", nullable: false),
-                    UpdatedAt = table.Column<DateTime>(type: "datetime(6)", nullable: false)
-                },
-                constraints: table =>
-                {
-                    table.PrimaryKey("PK_TenantUsages", x => x.TenantId);
-                    table.ForeignKey(
-                        name: "FK_TenantUsages_Tenants_TenantId",
-                        column: x => x.TenantId,
-                        principalTable: "Tenants",
                         principalColumn: "Id",
                         onDelete: ReferentialAction.Cascade);
                 })
@@ -649,23 +658,22 @@ namespace GestaoOficina.Migrations
                 column: "RoleId");
 
             migrationBuilder.CreateIndex(
-                name: "EmailIndex",
+                name: "IX_AspNetUsers_CpfCnpj",
                 table: "AspNetUsers",
-                column: "NormalizedEmail");
+                column: "CpfCnpj",
+                unique: true);
 
             migrationBuilder.CreateIndex(
-                name: "IX_AspNetUsers_Email",
+                name: "IX_AspNetUsers_NormalizedEmail",
                 table: "AspNetUsers",
-                column: "Email",
-                unique: true,
-                filter: "[Email] IS NOT NULL");
+                column: "NormalizedEmail",
+                unique: true);
 
             migrationBuilder.CreateIndex(
                 name: "IX_AspNetUsers_PhoneNumber",
                 table: "AspNetUsers",
                 column: "PhoneNumber",
-                unique: true,
-                filter: "[PhoneNumber] IS NOT NULL");
+                unique: true);
 
             migrationBuilder.CreateIndex(
                 name: "IX_AspNetUsers_TenantId",
@@ -964,10 +972,16 @@ namespace GestaoOficina.Migrations
                 name: "CustomerUnits");
 
             migrationBuilder.DropTable(
+                name: "PasswordResetCodes");
+
+            migrationBuilder.DropTable(
                 name: "ServiceOrderParts");
 
             migrationBuilder.DropTable(
                 name: "ServiceOrderTimelines");
+
+            migrationBuilder.DropTable(
+                name: "TenantUsages");
 
             migrationBuilder.DropTable(
                 name: "UserUnits");

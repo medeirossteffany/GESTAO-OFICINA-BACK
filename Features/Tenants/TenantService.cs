@@ -16,11 +16,13 @@ namespace GestaoOficina.Features.Tenants
 
         public async Task<Tenant> CreateTenant(CreateTenantRequest dto)
         {
+            var now = DateTime.UtcNow;
             var tenant = new Tenant
             {
                 Name = dto.Name,
                 Plan = dto.Plan ?? TenantPlan.Basico,
-                CreatedAt = DateTime.UtcNow
+                CreatedAt = now,
+                PlanRenewalDate = now.AddMonths(1).Date // Sempre salva com hora 00:00:00
             };
 
             _context.Tenants.Add(tenant);
@@ -32,6 +34,7 @@ namespace GestaoOficina.Features.Tenants
         {
             return await _context.Tenants
                 .Include(t => t.Unit)
+                .Include(t => t.Usage)
                 .FirstOrDefaultAsync(t => t.Id == id);
         }
 
@@ -39,6 +42,7 @@ namespace GestaoOficina.Features.Tenants
         {
             var tenant = await _context.Tenants
                 .Include(t => t.Unit)
+                .Include(t => t.Usage)
                 .FirstOrDefaultAsync(t => t.Id == id);
 
             if (tenant == null) return null;
@@ -77,6 +81,7 @@ namespace GestaoOficina.Features.Tenants
         {
             var tenant = await _context.Tenants
                 .Include(t => t.Unit)
+                .Include(t => t.Usage)
                 .FirstOrDefaultAsync(t => t.Id == id);
 
             if (tenant == null) return null;

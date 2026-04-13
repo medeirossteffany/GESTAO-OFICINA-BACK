@@ -2,6 +2,7 @@
 using Microsoft.AspNetCore.Authorization;
 using GestaoOficina.DTOs.Units;
 using GestaoOficina.Features.Units;
+using GestaoOficina.Features.Tenants;
 using System.Security.Claims;
 
 namespace GestaoOficina.Controllers
@@ -69,6 +70,7 @@ namespace GestaoOficina.Controllers
         }
 
         [HttpPost]
+        [ServiceFilter(typeof(RequireActivePlanAttribute))]
         [Authorize(Roles = "Admin")]
         public async Task<ActionResult<UnitResponse>> CreateUnit(CreateUnitRequest dto)
         {
@@ -97,7 +99,8 @@ namespace GestaoOficina.Controllers
             return CreatedAtAction(nameof(GetUnit), new { id = unit.Id }, response);
         }
 
-        [HttpPatch("{id}")]
+        [HttpPut("{id}")]
+        [ServiceFilter(typeof(RequireActivePlanAttribute))]
         [Authorize(Roles = "Admin")]
         public async Task<ActionResult<UnitResponse>> UpdateUnit(int id, UpdateUnitRequest dto)
         {
@@ -130,6 +133,7 @@ namespace GestaoOficina.Controllers
         }
 
         [HttpDelete("{id}")]
+        [ServiceFilter(typeof(RequireActivePlanAttribute))]
         [Authorize(Roles = "Admin")]
         public async Task<IActionResult> DeleteUnit(int id)
         {

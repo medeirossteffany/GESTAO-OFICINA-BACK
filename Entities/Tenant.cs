@@ -9,6 +9,7 @@ namespace GestaoOficina.Entities
         public string Name { get; set; }
         public int? UnitId { get; set; }
         public DateTime CreatedAt { get; set; }
+        public DateTime PlanRenewalDate { get; set; } // Nova coluna para data de renovação
 
         public Unit? Unit { get; set; }
         public ICollection<Unit> Units { get; set; }

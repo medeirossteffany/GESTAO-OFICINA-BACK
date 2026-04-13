@@ -5,6 +5,7 @@ using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using GestaoOficina.Features.ServiceOrders;
 using GestaoOficina.Features.Vehicles;
+using GestaoOficina.Features.Tenants;
 
 namespace GestaoOficina.Controllers
 {
@@ -32,6 +33,7 @@ namespace GestaoOficina.Controllers
         }
 
         [HttpPost("import/excel/resumo")]
+        [ServiceFilter(typeof(RequireActivePlanAttribute))]
         public async Task<IActionResult> ImportExcelResumoPorLoja([FromForm(Name = "file")] IFormFile file)
         {
             if (file is null || file.Length == 0)
@@ -66,7 +68,8 @@ namespace GestaoOficina.Controllers
         }
 
         [HttpPost]
-        public async Task<IActionResult> CreateServiceOrder([FromBody] CreateServiceOrderRequest dto)
+        [ServiceFilter(typeof(RequireActivePlanAttribute))]
+        public async Task<ActionResult<ServiceOrderResponse>> CreateServiceOrder([FromBody] CreateServiceOrderRequest dto)
         {
             if (!ModelState.IsValid)
                 return BadRequest(ModelState);
@@ -95,6 +98,7 @@ namespace GestaoOficina.Controllers
         }
 
         [HttpPatch("{id}")]
+        [ServiceFilter(typeof(RequireActivePlanAttribute))]
         public async Task<IActionResult> UpdateServiceOrder(int id, [FromBody] UpdateServiceOrderRequest dto)
         {
             if (!ModelState.IsValid)
@@ -130,6 +134,7 @@ namespace GestaoOficina.Controllers
         }
 
         [HttpDelete("{id}")]
+        [ServiceFilter(typeof(RequireActivePlanAttribute))]
         public async Task<IActionResult> DeleteServiceOrder(int id)
         {
             var loggedTenantId = int.Parse(User.FindFirstValue("TenantId"));
@@ -162,6 +167,7 @@ namespace GestaoOficina.Controllers
         }
 
         [HttpPatch("{id}/status/enviado")]
+        [ServiceFilter(typeof(RequireActivePlanAttribute))]
         [Authorize]
         public async Task<IActionResult> MarkAsEnviado(int id)
         {
@@ -169,6 +175,7 @@ namespace GestaoOficina.Controllers
         }
 
         [HttpPatch("{id}/status/feito")]
+        [ServiceFilter(typeof(RequireActivePlanAttribute))]
         [Authorize]
         public async Task<IActionResult> MarkAsFeito(int id)
         {
@@ -176,6 +183,7 @@ namespace GestaoOficina.Controllers
         }
 
         [HttpPatch("{id}/status/finalizado")]
+        [ServiceFilter(typeof(RequireActivePlanAttribute))]
         [Authorize]
         public async Task<IActionResult> MarkAsFinalizado(int id)
         {

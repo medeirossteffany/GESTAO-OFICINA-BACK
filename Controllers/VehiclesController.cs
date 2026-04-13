@@ -1,6 +1,7 @@
 ﻿using System.Security.Claims;
 using GestaoOficina.DTOs.Vehicles;
 using GestaoOficina.Entities;
+using GestaoOficina.Features.Tenants;
 using GestaoOficina.Features.Vehicles;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
@@ -50,6 +51,7 @@ namespace GestaoOficina.Controllers
         }
 
         [HttpPost]
+        [ServiceFilter(typeof(RequireActivePlanAttribute))]
         public async Task<ActionResult<VehicleResponse>> CreateVehicle(CreateVehicleRequest dto)
         {
             var loggedTenantId = int.Parse(User.FindFirstValue("TenantId"));
@@ -73,8 +75,9 @@ namespace GestaoOficina.Controllers
             }
         }
 
-        [HttpPatch("{id}")]
-        public async Task<ActionResult<VehicleResponse>> UpdateVehicle(int id, UpdateVehicleRequest dto)
+        [HttpPut("{id}")]
+        [ServiceFilter(typeof(RequireActivePlanAttribute))]
+        public async Task<ActionResult> UpdateVehicle(int id, UpdateVehicleRequest dto)
         {
             var loggedTenantId = int.Parse(User.FindFirstValue("TenantId"));
             var fullAccess = bool.Parse(User.FindFirstValue("FullAccess") ?? "false");
@@ -102,7 +105,8 @@ namespace GestaoOficina.Controllers
         }
 
         [HttpDelete("{id}")]
-        public async Task<IActionResult> DeleteVehicle(int id)
+        [ServiceFilter(typeof(RequireActivePlanAttribute))]
+        public async Task<ActionResult> DeleteVehicle(int id)
         {
             var loggedTenantId = int.Parse(User.FindFirstValue("TenantId"));
             var fullAccess = bool.Parse(User.FindFirstValue("FullAccess") ?? "false");
@@ -111,7 +115,6 @@ namespace GestaoOficina.Controllers
             var vehicle = await _service.GetVehicleById(id);
             if (vehicle == null) return NotFound();
 
-            // Verifica se o usuário tem acesso ao cliente dono do veículo
             var customer = vehicle.Customer;
             if (customer == null)
                 return BadRequest("Cliente do veículo não encontrado.");

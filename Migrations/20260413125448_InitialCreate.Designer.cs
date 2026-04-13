@@ -4,6 +4,7 @@ using GestaoOficina.Data;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 
 #nullable disable
@@ -11,9 +12,11 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace GestaoOficina.Migrations
 {
     [DbContext(typeof(AppDbContext))]
-    partial class AppDbContextModelSnapshot : ModelSnapshot
+    [Migration("20260413125448_InitialCreate")]
+    partial class InitialCreate
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -469,9 +472,6 @@ namespace GestaoOficina.Migrations
                         .ValueGeneratedOnAdd()
                         .HasColumnType("longtext")
                         .HasDefaultValue("Basico");
-
-                    b.Property<DateTime>("PlanRenewalDate")
-                        .HasColumnType("datetime(6)");
 
                     b.Property<int?>("UnitId")
                         .HasColumnType("int");

@@ -42,6 +42,7 @@ var corsOrigins = corsOriginsRaw
 
 builder.Services.AddDbContext<AppDbContext>(options =>
     options.UseMySql(connectionString, ServerVersion.AutoDetect(connectionString))
+           .LogTo(Console.WriteLine, Microsoft.Extensions.Logging.LogLevel.Information)
 );
 
 builder.Services.AddIdentity<User, IdentityRole<int>>(options =>
@@ -88,6 +89,7 @@ builder.Services.AddScoped<ServiceOrderService>();
 builder.Services.AddScoped<ServiceOrderPdfService>();
 builder.Services.AddScoped<ServiceOrderExcelService>();
 builder.Services.AddScoped<PasswordResetService>();
+builder.Services.AddScoped<RequireActivePlanAttribute>();
 
 builder.Services.AddCors(options =>
 {

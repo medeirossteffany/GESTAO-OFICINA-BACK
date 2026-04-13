@@ -12,8 +12,8 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace GestaoOficina.Migrations
 {
     [DbContext(typeof(AppDbContext))]
-    [Migration("20260325151133_InitialCreate")]
-    partial class InitialCreate
+    [Migration("20260413155440_AddPlanRenewalDateToTenant")]
+    partial class AddPlanRenewalDateToTenant
     {
         /// <inheritdoc />
         protected override void BuildTargetModel(ModelBuilder modelBuilder)
@@ -168,6 +168,11 @@ namespace GestaoOficina.Migrations
                     b.Property<int>("CustomerId")
                         .HasColumnType("int");
 
+                    b.Property<bool>("IsActive")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("tinyint(1)")
+                        .HasDefaultValue(true);
+
                     b.Property<int>("UnitId")
                         .HasColumnType("int");
 
@@ -179,6 +184,34 @@ namespace GestaoOficina.Migrations
                         .IsUnique();
 
                     b.ToTable("CustomerUnits");
+                });
+
+            modelBuilder.Entity("GestaoOficina.Entities.PasswordResetCode", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    MySqlPropertyBuilderExtensions.UseMySqlIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<string>("Code")
+                        .IsRequired()
+                        .HasMaxLength(5)
+                        .HasColumnType("varchar(5)");
+
+                    b.Property<string>("Email")
+                        .IsRequired()
+                        .HasColumnType("longtext");
+
+                    b.Property<DateTime>("Expiration")
+                        .HasColumnType("datetime(6)");
+
+                    b.Property<bool>("Used")
+                        .HasColumnType("tinyint(1)");
+
+                    b.HasKey("Id");
+
+                    b.ToTable("PasswordResetCodes");
                 });
 
             modelBuilder.Entity("GestaoOficina.Entities.ServiceOrder", b =>
@@ -213,6 +246,14 @@ namespace GestaoOficina.Migrations
                         .ValueGeneratedOnAdd()
                         .HasColumnType("tinyint(1)")
                         .HasDefaultValue(true);
+
+                    b.Property<string>("MechanicsDescription")
+                        .HasColumnType("longtext");
+
+                    b.Property<decimal>("MechanicsValue")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("decimal(65,30)")
+                        .HasDefaultValue(0m);
 
                     b.Property<int>("OwnerCustomerId")
                         .HasColumnType("int");
@@ -277,6 +318,11 @@ namespace GestaoOficina.Migrations
                     b.Property<string>("Description")
                         .IsRequired()
                         .HasColumnType("longtext");
+
+                    b.Property<bool>("IsActive")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("tinyint(1)")
+                        .HasDefaultValue(true);
 
                     b.Property<decimal>("Quantity")
                         .HasColumnType("decimal(65,30)");
@@ -367,6 +413,11 @@ namespace GestaoOficina.Migrations
                         .IsRequired()
                         .HasColumnType("longtext");
 
+                    b.Property<bool>("IsActive")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("tinyint(1)")
+                        .HasDefaultValue(true);
+
                     b.Property<string>("Message")
                         .IsRequired()
                         .HasColumnType("longtext");
@@ -416,6 +467,15 @@ namespace GestaoOficina.Migrations
                         .IsRequired()
                         .HasColumnType("longtext");
 
+                    b.Property<string>("Plan")
+                        .IsRequired()
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("longtext")
+                        .HasDefaultValue("Basico");
+
+                    b.Property<DateTime>("PlanRenewalDate")
+                        .HasColumnType("datetime(6)");
+
                     b.Property<int?>("UnitId")
                         .HasColumnType("int");
 
@@ -423,7 +483,51 @@ namespace GestaoOficina.Migrations
 
                     b.HasIndex("UnitId");
 
-                    b.ToTable("Tenants");
+                    b.ToTable("Tenants", null, t =>
+                        {
+                            t.HasCheckConstraint("CK_Tenants_Plan", "`Plan` IN ('Basico','Profissional','Premium')");
+                        });
+                });
+
+            modelBuilder.Entity("GestaoOficina.Entities.TenantUsage", b =>
+                {
+                    b.Property<int>("TenantId")
+                        .HasColumnType("int");
+
+                    b.Property<int>("CurrentCustomers")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int")
+                        .HasDefaultValue(0);
+
+                    b.Property<int>("CurrentServicesInMonth")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int")
+                        .HasDefaultValue(0);
+
+                    b.Property<int>("CurrentUnits")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int")
+                        .HasDefaultValue(0);
+
+                    b.Property<int>("CurrentUsers")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int")
+                        .HasDefaultValue(0);
+
+                    b.Property<int>("CurrentVehicles")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int")
+                        .HasDefaultValue(0);
+
+                    b.Property<DateTime>("ServicesMonthReference")
+                        .HasColumnType("datetime(6)");
+
+                    b.Property<DateTime>("UpdatedAt")
+                        .HasColumnType("datetime(6)");
+
+                    b.HasKey("TenantId");
+
+                    b.ToTable("TenantUsages", (string)null);
                 });
 
             modelBuilder.Entity("GestaoOficina.Entities.Unit", b =>
@@ -464,9 +568,22 @@ namespace GestaoOficina.Migrations
                     b.Property<DateTime>("CreatedAt")
                         .HasColumnType("datetime(6)");
 
+                    b.Property<string>("Email")
+                        .HasMaxLength(255)
+                        .HasColumnType("varchar(255)");
+
+                    b.Property<bool>("IsActive")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("tinyint(1)")
+                        .HasDefaultValue(true);
+
                     b.Property<string>("Name")
                         .IsRequired()
                         .HasColumnType("longtext");
+
+                    b.Property<string>("Phone")
+                        .HasMaxLength(30)
+                        .HasColumnType("varchar(30)");
 
                     b.Property<int>("TenantId")
                         .HasColumnType("int");
@@ -514,7 +631,7 @@ namespace GestaoOficina.Migrations
                         .HasColumnType("longtext");
 
                     b.Property<string>("CpfCnpj")
-                        .HasColumnType("longtext");
+                        .HasColumnType("varchar(255)");
 
                     b.Property<DateTime>("CreatedAt")
                         .HasColumnType("datetime(6)");
@@ -583,20 +700,20 @@ namespace GestaoOficina.Migrations
 
                     b.HasKey("Id");
 
-                    b.HasIndex("Email")
+                    b.HasIndex("CpfCnpj")
                         .IsUnique()
-                        .HasFilter("[Email] IS NOT NULL");
+                        .HasDatabaseName("IX_AspNetUsers_CpfCnpj");
 
                     b.HasIndex("NormalizedEmail")
-                        .HasDatabaseName("EmailIndex");
+                        .IsUnique()
+                        .HasDatabaseName("IX_AspNetUsers_NormalizedEmail");
 
                     b.HasIndex("NormalizedUserName")
                         .IsUnique()
                         .HasDatabaseName("UserNameIndex");
 
                     b.HasIndex("PhoneNumber")
-                        .IsUnique()
-                        .HasFilter("[PhoneNumber] IS NOT NULL");
+                        .IsUnique();
 
                     b.HasIndex("TenantId");
 
@@ -612,6 +729,11 @@ namespace GestaoOficina.Migrations
                         .HasColumnType("int");
 
                     MySqlPropertyBuilderExtensions.UseMySqlIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<bool>("IsActive")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("tinyint(1)")
+                        .HasDefaultValue(true);
 
                     b.Property<int>("UnitId")
                         .HasColumnType("int");
@@ -918,7 +1040,7 @@ namespace GestaoOficina.Migrations
             modelBuilder.Entity("GestaoOficina.Entities.ServiceOrderPart", b =>
                 {
                     b.HasOne("GestaoOficina.Entities.ServiceOrder", "ServiceOrder")
-                        .WithMany()
+                        .WithMany("Parts")
                         .HasForeignKey("ServiceOrderId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
@@ -958,7 +1080,8 @@ namespace GestaoOficina.Migrations
 
                     b.HasOne("GestaoOficina.Entities.User", "User")
                         .WithMany()
-                        .HasForeignKey("UserId");
+                        .HasForeignKey("UserId")
+                        .OnDelete(DeleteBehavior.SetNull);
 
                     b.Navigation("NewStatus");
 
@@ -979,6 +1102,17 @@ namespace GestaoOficina.Migrations
                         .OnDelete(DeleteBehavior.Restrict);
 
                     b.Navigation("Unit");
+                });
+
+            modelBuilder.Entity("GestaoOficina.Entities.TenantUsage", b =>
+                {
+                    b.HasOne("GestaoOficina.Entities.Tenant", "Tenant")
+                        .WithOne("Usage")
+                        .HasForeignKey("GestaoOficina.Entities.TenantUsage", "TenantId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Tenant");
                 });
 
             modelBuilder.Entity("GestaoOficina.Entities.Unit", b =>
@@ -1101,6 +1235,11 @@ namespace GestaoOficina.Migrations
                     b.Navigation("CustomerUnits");
                 });
 
+            modelBuilder.Entity("GestaoOficina.Entities.ServiceOrder", b =>
+                {
+                    b.Navigation("Parts");
+                });
+
             modelBuilder.Entity("GestaoOficina.Entities.Tenant", b =>
                 {
                     b.Navigation("CustomerCategories");
@@ -1114,6 +1253,8 @@ namespace GestaoOficina.Migrations
                     b.Navigation("ServiceOrders");
 
                     b.Navigation("Units");
+
+                    b.Navigation("Usage");
 
                     b.Navigation("Users");
 

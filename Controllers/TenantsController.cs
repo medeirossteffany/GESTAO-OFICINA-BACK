@@ -18,6 +18,7 @@ namespace GestaoOficina.Controllers
         }
 
         [HttpPost]
+        [ServiceFilter(typeof(RequireActivePlanAttribute))]
         public async Task<ActionResult<Tenant>> CreateTenant(CreateTenantRequest dto)
         {
             var tenant = await _service.CreateTenant(dto);
@@ -40,6 +41,7 @@ namespace GestaoOficina.Controllers
             {
                 tenant.Name,
                 tenant.Plan,
+                PlanRenewalDate = tenant.PlanRenewalDate, // Agora retorna da entidade Tenant
                 Cnpj = tenant.Unit?.Cnpj,
                 tenant.CreatedAt
             });
@@ -47,6 +49,7 @@ namespace GestaoOficina.Controllers
 
         [HttpPatch]
         [Authorize(Roles = "Admin")]
+        [ServiceFilter(typeof(RequireActivePlanAttribute))]
         public async Task<ActionResult> UpdateTenant(UpdateTenantRequest dto)
         {
             var tenantIdClaim = User.FindFirstValue("TenantId");
@@ -72,6 +75,7 @@ namespace GestaoOficina.Controllers
 
         [HttpPatch("upgrade-plan")]
         [Authorize(Roles = "Admin")]
+        [ServiceFilter(typeof(RequireActivePlanAttribute))]
         public async Task<ActionResult> UpgradeTenantPlan(UpgradeTenantPlanRequest dto)
         {
             var tenantIdClaim = User.FindFirstValue("TenantId");
