@@ -99,7 +99,7 @@ namespace GestaoOficina.Controllers
             return CreatedAtAction(nameof(GetUnit), new { id = unit.Id }, response);
         }
 
-        [HttpPut("{id}")]
+        [HttpPatch("{id}")]
         [ServiceFilter(typeof(RequireActivePlanAttribute))]
         [Authorize(Roles = "Admin")]
         public async Task<ActionResult<UnitResponse>> UpdateUnit(int id, UpdateUnitRequest dto)

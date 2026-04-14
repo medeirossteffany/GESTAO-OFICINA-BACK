@@ -39,11 +39,21 @@ namespace GestaoOficina.Features.Onboarding
                 throw new InvalidOperationException($"O telefone {dto.AdminPhoneNumber} já está registrado no sistema.");
             }
 
+
+            var now = DateTime.UtcNow;
+            var renewalDate = now.AddMonths(1);
+            renewalDate = new DateTime(renewalDate.Year, renewalDate.Month, now.Day, 0, 0, 0, DateTimeKind.Utc);
+            // Ajusta para o último dia do mês se o mês seguinte não tiver o mesmo dia
+            if (renewalDate.Day != now.Day)
+            {
+                renewalDate = new DateTime(renewalDate.Year, renewalDate.Month, DateTime.DaysInMonth(renewalDate.Year, renewalDate.Month), 0, 0, 0, DateTimeKind.Utc);
+            }
             var tenant = new Tenant
             {
                 Name = dto.TenantName,
                 Plan = dto.Plan ?? TenantPlan.Basico,
-                CreatedAt = DateTime.UtcNow
+                CreatedAt = now,
+                PlanRenewalDate = renewalDate
             };
 
             _context.Tenants.Add(tenant);

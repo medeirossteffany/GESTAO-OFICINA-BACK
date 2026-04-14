@@ -200,26 +200,27 @@ namespace GestaoOficina.Features.ServiceOrders
       margin-bottom: 16px;
     }
 
-    .customer-row {
-      display: flex;
-      margin-bottom: 4px;
-      font-size: 11px;
-    }
-
-    .customer-row:last-child {
+    .customer-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 8px 24px;
       margin-bottom: 0;
     }
-
+    .customer-cell {
+      display: flex;
+      flex-direction: column;
+      font-size: 11px;
+      background: none;
+      padding: 0;
+    }
     .customer-label {
       font-weight: 600;
       color: #1a5490;
-      min-width: 60px;
-      margin-right: 8px;
+      margin-bottom: 2px;
     }
-
     .customer-value {
       color: #2c3e50;
-      flex: 1;
+      word-break: break-word;
     }
 
     .service-section {
@@ -400,21 +401,32 @@ namespace GestaoOficina.Features.ServiceOrders
     </div>
 
     <div class="customer-section">
-      <div class="customer-row">
-        <div class="customer-label">Cliente:</div>
-        <div class="customer-value">{{Safe(so.OwnerCustomer?.Name)}}</div>
+      <div class="customer-grid">
+        <div class="customer-cell">
+          <div class="customer-label">Cliente:</div>
+          <div class="customer-value">{{Safe(so.OwnerCustomer?.Name)}}</div>
+        </div>
+        <div class="customer-cell">
+          <div class="customer-label">Placa:</div>
+          <div class="customer-value">{{Safe(so.Vehicle?.Plate)}}</div>
+        </div>
+        <div class="customer-cell">
+          <div class="customer-label">Veículo:</div>
+          <div class="customer-value">{{vehicleLabel}}</div>
+        </div>
+        <div class="customer-cell">
+          <div class="customer-label">VIN:</div>
+          <div class="customer-value">{{Safe(so.Vehicle?.Vin)}}</div>
+        </div>
+        <div class="customer-cell">
+          <div class="customer-label">Renavam:</div>
+          <div class="customer-value">{{Safe(so.Vehicle?.Renavam)}}</div>
+        </div>
+        <div class="customer-cell">
+          <div class="customer-label">Sinistro:</div>
+          <div class="customer-value">{{Safe(so.Vehicle?.InsuranceClaimNumber)}}</div>
+        </div>
       </div>
-      <div class="customer-row">
-        <div class="customer-label">Placa:</div>
-        <div class="customer-value">{{Safe(so.Vehicle?.Plate)}}</div>
-      </div>
-      <div class="customer-row">
-        <div class="customer-label">Veículo:</div>
-        <div class="customer-value">{{vehicleLabel}}</div>
-      </div>
-      {{vinRowHtml}}
-      {{renavamRowHtml}}
-      {{insuranceClaimRowHtml}}
     </div>
 
     <div class="service-section">
