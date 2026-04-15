@@ -1,4 +1,4 @@
-# MOTORCORE CRM - Backend
+# MOTORCORE ERP - Backend
 
 Este projeto é a API backend do sistema MOTORCORE, responsável por gerenciar dados, regras de negócio e autenticação para oficinas mecânicas e funilarias.
 
